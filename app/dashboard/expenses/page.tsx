@@ -1,14 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Card } from '@/components/ui/Card';
-import { Input } from '@/components/ui/Input';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createBrowserClient } from '@supabase/ssr';
 import { useAppStore } from '@/lib/store';
 import { format, parseISO } from 'date-fns';
-import { styled } from '@/stitches.config';
-import { Search, Trash2, Calendar, TrendingDown } from 'lucide-react';
+import { Search, Trash2, Calendar, TrendingDown, Receipt } from 'lucide-react';
 import { toast } from 'sonner';
 
 const CATEGORY_META: Record<string, { label: string; color: string; emoji: string }> = {
@@ -21,82 +19,14 @@ const CATEGORY_META: Record<string, { label: string; color: string; emoji: strin
   other:         { label: 'Other',         color: '#94a3b8', emoji: '📦' },
 };
 
-const DaySection = styled('div', {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '0',
-  borderRadius: '16px',
-  overflow: 'hidden',
-  border: '1px solid $border',
-  backgroundColor: '$surface',
-});
-
-const DayHeader = styled('div', {
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  padding: '14px 20px',
-  backgroundColor: 'rgba(26,26,36,0.8)',
-  borderBottom: '1px solid $border',
-});
-
-const DayDateLabel = styled('div', {
-  display: 'flex',
-  alignItems: 'center',
-  gap: '10px',
-  fontWeight: 600,
-  fontSize: '14px',
-  color: '$textPrimary',
-});
-
-const DayTotal = styled('div', {
-  fontSize: '14px',
-  fontWeight: 700,
-  color: '#ef4444',
-  fontFamily: '$mono',
-});
-
-const ExpenseRow = styled('div', {
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  padding: '14px 20px',
-  borderBottom: '1px solid rgba(42,42,58,0.5)',
-  transition: 'background 0.15s',
-  '&:last-child': { borderBottom: 'none' },
-  '&:hover': { backgroundColor: 'rgba(124,58,237,0.04)' },
-});
-
-const CategoryDot = styled('div', {
-  width: '10px',
-  height: '10px',
-  borderRadius: '50%',
-  flexShrink: 0,
-});
-
-const CategoryPill = styled('span', {
-  fontSize: '11px',
-  padding: '3px 10px',
-  borderRadius: '$full',
-  fontWeight: 500,
-});
-
-const DeleteBtn = styled('button', {
-  all: 'unset',
-  cursor: 'pointer',
-  color: '#475569',
-  padding: '8px',
-  borderRadius: '$sm',
-  display: 'flex',
-  alignItems: 'center',
-  transition: 'all 0.15s',
-  '&:hover': { color: '#ef4444', backgroundColor: 'rgba(239,68,68,0.08)' },
-});
+const localDate = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
 export default function ExpensesPage() {
-  const activeBudget = useAppStore(state => state.activeBudget);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterCategory, setFilterCategory] = useState('all');
+  const activeBudget = useAppStore(s => s.activeBudget);
+  const [search, setSearch]   = useState('');
+  const [catFilter, setCat]   = useState('all');
+  const [deletingId, setDeleting] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   const supabase = createBrowserClient(
@@ -108,9 +38,7 @@ export default function ExpensesPage() {
     queryKey: ['expenses', activeBudget?.id],
     queryFn: async () => {
       if (!activeBudget) return [];
-      const { data, error } = await supabase
-        .from('expenses')
-        .select('*')
+      const { data, error } = await supabase.from('expenses').select('*')
         .eq('budget_id', activeBudget.id)
         .order('expense_date', { ascending: false })
         .order('created_at', { ascending: false });
@@ -121,194 +49,189 @@ export default function ExpensesPage() {
   });
 
   const handleDelete = async (id: string, amount: number, date: string) => {
+    setDeleting(id);
     try {
-      const { error } = await supabase.from('expenses').delete().eq('id', id);
-      if (error) throw error;
-
-      // Also decrement daily_reserves.spent
-      const { data: reserveRow } = await supabase
-        .from('daily_reserves')
-        .select('id, spent')
-        .eq('budget_id', activeBudget!.id)
-        .eq('reserve_date', date)
-        .maybeSingle();
+      await supabase.from('expenses').delete().eq('id', id);
+      const { data: reserveRow } = await supabase.from('daily_reserves')
+        .select('id, spent').eq('budget_id', activeBudget!.id).eq('reserve_date', date).maybeSingle();
       if (reserveRow) {
-        await supabase
-          .from('daily_reserves')
-          .update({ spent: Math.max(0, Number(reserveRow.spent) - amount) })
-          .eq('id', reserveRow.id);
+        await supabase.from('daily_reserves')
+          .update({ spent: Math.max(0, Number(reserveRow.spent) - amount) }).eq('id', reserveRow.id);
       }
-
       queryClient.invalidateQueries({ queryKey: ['expenses', activeBudget!.id] });
       queryClient.invalidateQueries({ queryKey: ['stats', activeBudget!.id] });
       queryClient.invalidateQueries({ queryKey: ['reserve', activeBudget!.id] });
-      queryClient.invalidateQueries({ queryKey: ['trend-chart', activeBudget!.id] });
       toast.success('Expense deleted');
     } catch (e: any) {
-      toast.error(e.message || 'Failed to delete');
+      toast.error(e.message);
+    } finally {
+      setDeleting(null);
     }
   };
 
-  // Filter
+  // filter
   const filtered = expenses.filter(ex => {
-    if (filterCategory !== 'all' && ex.category !== filterCategory) return false;
-    if (searchTerm && !ex.note?.toLowerCase().includes(searchTerm.toLowerCase()) &&
-        !ex.category.toLowerCase().includes(searchTerm.toLowerCase())) return false;
+    if (catFilter !== 'all' && ex.category !== catFilter) return false;
+    if (search && !ex.note?.toLowerCase().includes(search.toLowerCase()) &&
+        !ex.category.includes(search.toLowerCase())) return false;
     return true;
   });
 
-  // Group by expense_date
+  // group by date
   const grouped = filtered.reduce((acc: Record<string, typeof filtered>, ex) => {
-    const d = ex.expense_date;
-    if (!acc[d]) acc[d] = [];
-    acc[d].push(ex);
+    if (!acc[ex.expense_date]) acc[ex.expense_date] = [];
+    acc[ex.expense_date].push(ex);
     return acc;
   }, {});
   const sortedDates = Object.keys(grouped).sort((a, b) => b.localeCompare(a));
 
+  const todayStr     = localDate(new Date());
+  const yesterdayStr = localDate(new Date(Date.now() - 864e5));
   const totalFiltered = filtered.reduce((s, e) => s + Number(e.amount_in_budget_currency), 0);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
         <div>
-          <h1 style={{ fontSize: '24px', fontWeight: 700, margin: 0 }}>Expense History</h1>
+          <h1 style={{ fontSize: '24px', fontWeight: 800, margin: 0 }}>Expense History</h1>
           {activeBudget && (
-            <p style={{ color: '#94a3b8', fontSize: '14px', margin: '4px 0 0' }}>
-              {filtered.length} transactions · Total spent: {activeBudget.currency}{totalFiltered.toFixed(0)}
+            <p style={{ color: '#64748b', fontSize: '14px', margin: '4px 0 0' }}>
+              <span style={{ color: '#94a3b8' }}>{filtered.length} transactions</span>
+              &nbsp;·&nbsp;Total: <span style={{ color: '#ef4444', fontWeight: 600, fontFamily: 'monospace' }}>{activeBudget.currency}{totalFiltered.toFixed(0)}</span>
             </p>
           )}
         </div>
-      </div>
+      </motion.div>
 
       {/* Filters */}
-      <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-        <div style={{ flex: 1, minWidth: '200px', position: 'relative' }}>
-          <Search size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#475569' }} />
+      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }} style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
+        {/* Search */}
+        <div style={{ position: 'relative', flex: '1 1 200px', minWidth: '180px' }}>
+          <Search size={15} style={{ position: 'absolute', left: '13px', top: '50%', transform: 'translateY(-50%)', color: '#475569' }} />
           <input
             placeholder="Search notes or categories..."
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            style={{
-              width: '100%', boxSizing: 'border-box',
-              backgroundColor: '#1a1a24', border: '1px solid #2a2a3a',
-              borderRadius: '12px', padding: '10px 14px 10px 40px',
-              fontSize: '14px', color: '#f1f5f9', outline: 'none',
-            }}
+            value={search} onChange={e => setSearch(e.target.value)}
+            style={{ width: '100%', boxSizing: 'border-box', backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '10px 14px 10px 38px', fontSize: '14px', color: '#f1f5f9', outline: 'none', fontFamily: 'inherit' }}
           />
         </div>
-        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          {['all', 'meals', 'transport', 'groceries', 'entertainment', 'utilities', 'health', 'other'].map(cat => {
-            const meta = cat === 'all' ? null : CATEGORY_META[cat];
-            const isActive = filterCategory === cat;
+        {/* Category chips */}
+        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+          {['all', ...Object.keys(CATEGORY_META)].map(cat => {
+            const meta = CATEGORY_META[cat];
+            const active = catFilter === cat;
             return (
-              <button
-                key={cat}
-                onClick={() => setFilterCategory(cat)}
-                style={{
-                  padding: '8px 14px', borderRadius: '10px', fontSize: '13px', fontWeight: 500,
-                  cursor: 'pointer', transition: 'all 0.15s',
-                  border: `1px solid ${isActive ? (meta?.color || '#7c3aed') : '#2a2a3a'}`,
-                  background: isActive ? `${meta?.color || '#7c3aed'}18` : 'transparent',
-                  color: isActive ? (meta?.color || '#9f67ff') : '#475569',
-                }}
-              >
+              <motion.button key={cat} whileTap={{ scale: 0.95 }} onClick={() => setCat(cat)}
+                style={{ padding: '7px 13px', borderRadius: '10px', fontSize: '12px', fontWeight: 500, cursor: 'pointer', border: `1px solid ${active ? (meta?.color || '#7c3aed') : 'rgba(255,255,255,0.08)'}`, background: active ? `${meta?.color || '#7c3aed'}15` : 'transparent', color: active ? (meta?.color || '#a78bfa') : '#475569', transition: 'all 0.15s' }}>
                 {meta ? `${meta.emoji} ${meta.label}` : 'All'}
-              </button>
+              </motion.button>
             );
           })}
         </div>
-      </div>
+      </motion.div>
 
-      {/* Date-grouped expense list */}
+      {/* Content */}
       {!activeBudget ? (
-        <Card css={{ textAlign: 'center', padding: '48px', color: '$textMuted' }}>
+        <div style={{ padding: '64px', textAlign: 'center', borderRadius: '20px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', color: '#64748b' }}>
           Create a budget first to track expenses
-        </Card>
+        </div>
       ) : isLoading ? (
-        <Card css={{ textAlign: 'center', padding: '48px', color: '$textMuted' }}>Loading...</Card>
+        <div style={{ padding: '64px', textAlign: 'center', color: '#64748b' }}>Loading expenses...</div>
       ) : sortedDates.length === 0 ? (
-        <Card css={{ textAlign: 'center', padding: '64px 32px' }}>
-          <div style={{ fontSize: '48px', marginBottom: '12px' }}>🧾</div>
-          <div style={{ color: '#94a3b8' }}>No expenses found. Hit the + button to add one!</div>
-        </Card>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+          style={{ padding: '80px 32px', textAlign: 'center', borderRadius: '20px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
+          <Receipt size={48} color="#334155" style={{ margin: '0 auto 16px' }} />
+          <div style={{ color: '#64748b', fontSize: '16px', marginBottom: '8px' }}>No expenses found</div>
+          <div style={{ color: '#334155', fontSize: '14px' }}>Hit the <strong style={{ color: '#7c3aed' }}>+</strong> button to log your first one</div>
+        </motion.div>
       ) : (
-        sortedDates.map(date => {
-          const dayExpenses = grouped[date];
-          const dayTotal = dayExpenses.reduce((s, e) => s + Number(e.amount_in_budget_currency), 0);
-          const parsedDate = parseISO(date);
+        <AnimatePresence>
+          {sortedDates.map((date, groupIdx) => {
+            const dayExps   = grouped[date];
+            const dayTotal  = dayExps.reduce((s, e) => s + Number(e.amount_in_budget_currency), 0);
+            const parsed    = parseISO(date);
+            const dateLabel = date === todayStr ? 'Today' : date === yesterdayStr ? 'Yesterday' : format(parsed, 'EEEE, d MMMM yyyy');
 
-          // Use local date (not UTC) to avoid IST midnight shift
-          const todayLocal = new Date();
-          const todayStr = `${todayLocal.getFullYear()}-${String(todayLocal.getMonth() + 1).padStart(2, '0')}-${String(todayLocal.getDate()).padStart(2, '0')}`;
-          const yesterdayLocal = new Date();
-          yesterdayLocal.setDate(yesterdayLocal.getDate() - 1);
-          const yesterdayStr = `${yesterdayLocal.getFullYear()}-${String(yesterdayLocal.getMonth() + 1).padStart(2, '0')}-${String(yesterdayLocal.getDate()).padStart(2, '0')}`;
+            return (
+              <motion.div key={date}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ delay: groupIdx * 0.05, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                style={{ borderRadius: '20px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.07)', background: 'rgba(255,255,255,0.02)' }}
+              >
+                {/* Day header */}
+                <div style={{
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  padding: '14px 20px',
+                  background: 'rgba(0,0,0,0.3)',
+                  borderBottom: '1px solid rgba(255,255,255,0.05)',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <Calendar size={14} color="#7c3aed" />
+                    <span style={{ fontWeight: 700, fontSize: '14px', color: '#f1f5f9' }}>{dateLabel}</span>
+                    <span style={{ fontSize: '12px', color: '#334155', padding: '2px 8px', borderRadius: '6px', background: 'rgba(255,255,255,0.04)' }}>
+                      {dayExps.length} {dayExps.length === 1 ? 'item' : 'items'}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#ef4444', fontWeight: 700, fontFamily: 'monospace', fontSize: '15px' }}>
+                    <TrendingDown size={14} />
+                    {activeBudget.currency}{dayTotal.toFixed(0)}
+                  </div>
+                </div>
 
-          const isToday = date === todayStr;
-          const isYesterday = date === yesterdayStr;
-          const dateLabel = isToday ? 'Today' : isYesterday ? 'Yesterday' : format(parsedDate, 'EEEE, d MMMM yyyy');
-
-          return (
-            <DaySection key={date}>
-              <DayHeader>
-                <DayDateLabel>
-                  <Calendar size={15} color="#7c3aed" />
-                  {dateLabel}
-                  <span style={{ fontSize: '12px', color: '#475569', fontWeight: 400 }}>
-                    {dayExpenses.length} {dayExpenses.length === 1 ? 'expense' : 'expenses'}
-                  </span>
-                </DayDateLabel>
-                <DayTotal>
-                  <TrendingDown size={14} style={{ display: 'inline', marginRight: '4px', verticalAlign: 'middle' }} />
-                  {activeBudget.currency}{dayTotal.toFixed(0)}
-                </DayTotal>
-              </DayHeader>
-
-              {dayExpenses.map((expense: any) => {
-                const meta = CATEGORY_META[expense.category] || CATEGORY_META.other;
-                return (
-                  <ExpenseRow key={expense.id}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                      <div style={{
-                        width: '38px', height: '38px', borderRadius: '10px', flexShrink: 0,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        backgroundColor: `${meta.color}18`, fontSize: '18px',
-                      }}>
-                        {meta.emoji}
-                      </div>
-                      <div>
-                        <div style={{ fontWeight: 500, color: '#f1f5f9', fontSize: '15px' }}>
-                          {expense.note || meta.label}
+                {/* Expense rows */}
+                {dayExps.map((expense: any, rowIdx) => {
+                  const meta = CATEGORY_META[expense.category] || CATEGORY_META.other;
+                  const isDeleting = deletingId === expense.id;
+                  return (
+                    <motion.div key={expense.id}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: 10, height: 0 }}
+                      transition={{ delay: rowIdx * 0.04 }}
+                      style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 20px', borderBottom: rowIdx < dayExps.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none', transition: 'background 0.15s' }}
+                      onMouseEnter={e => (e.currentTarget.style.background = 'rgba(124,58,237,0.04)')}
+                      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                        <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: `${meta.color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', flexShrink: 0 }}>
+                          {meta.emoji}
                         </div>
-                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '4px' }}>
-                          <CategoryPill style={{ backgroundColor: `${meta.color}18`, color: meta.color }}>
-                            {meta.label}
-                          </CategoryPill>
-                          <span style={{ fontSize: '12px', color: '#475569' }}>
-                            {format(new Date(expense.created_at), 'h:mm a')}
-                          </span>
+                        <div>
+                          <div style={{ fontWeight: 600, fontSize: '15px', color: '#f1f5f9' }}>{expense.note || meta.label}</div>
+                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '4px' }}>
+                            <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '100px', background: `${meta.color}18`, color: meta.color, fontWeight: 500 }}>
+                              {meta.label}
+                            </span>
+                            <span style={{ fontSize: '12px', color: '#334155' }}>
+                              {format(new Date(expense.created_at), 'h:mm a')}
+                            </span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <span style={{
-                        fontWeight: 700, fontSize: '16px', color: '#ef4444',
-                        fontFamily: 'monospace',
-                      }}>
-                        -{activeBudget.currency}{Number(expense.amount_in_budget_currency).toFixed(0)}
-                      </span>
-                      <DeleteBtn onClick={() => handleDelete(expense.id, Number(expense.amount_in_budget_currency), expense.expense_date)}>
-                        <Trash2 size={15} />
-                      </DeleteBtn>
-                    </div>
-                  </ExpenseRow>
-                );
-              })}
-            </DaySection>
-          );
-        })
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
+                        <span style={{ fontWeight: 700, fontSize: '16px', color: '#ef4444', fontFamily: 'monospace' }}>
+                          -{activeBudget.currency}{Number(expense.amount_in_budget_currency).toFixed(0)}
+                        </span>
+                        <motion.button
+                          whileHover={{ scale: 1.15, color: '#ef4444' }}
+                          whileTap={{ scale: 0.9 }}
+                          disabled={isDeleting}
+                          onClick={() => handleDelete(expense.id, Number(expense.amount_in_budget_currency), expense.expense_date)}
+                          style={{ background: 'none', border: 'none', cursor: isDeleting ? 'wait' : 'pointer', color: isDeleting ? '#ef4444' : '#334155', padding: '6px', borderRadius: '8px', display: 'flex', alignItems: 'center', transition: 'all 0.15s' }}
+                        >
+                          <Trash2 size={15} />
+                        </motion.button>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </motion.div>
+            );
+          })}
+        </AnimatePresence>
       )}
     </div>
   );
