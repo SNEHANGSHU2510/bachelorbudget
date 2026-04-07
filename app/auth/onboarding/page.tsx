@@ -42,8 +42,9 @@ export default function OnboardingPage() {
           start_date: startDate,
           end_date: new Date(new Date(startDate).setDate(new Date(startDate).getDate() + Number(days) - 1)).toISOString(),
           duration_days: Number(days),
-        } as any; // Cast specifically if needed by store, but removing explicit any from var
-        setActiveBudget(mockBudget);
+        };
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        setActiveBudget(mockBudget as any);
         toast.success('Budget created (Mock Mode)');
         router.push('/dashboard');
         return;

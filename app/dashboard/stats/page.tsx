@@ -9,6 +9,16 @@ import { format, parseISO } from 'date-fns';
 import { Sparkles, TrendingUp, TrendingDown, Award, MessageCircle, Send, RefreshCw, BarChart3, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 
+interface Expense {
+  id: string;
+  budget_id: string;
+  amount: number;
+  amount_in_budget_currency: number;
+  category: string;
+  description: string;
+  expense_date: string;
+}
+
 const C = {
   bg: '#131318', surface: '#1f1f25', surfaceHigh: '#2a292f', surfaceHighest: '#35343a',
   primary: '#8a2be2', primaryDim: 'rgba(138,43,226,0.12)', primaryBorder: 'rgba(138,43,226,0.30)', primaryGlow: 'rgba(138,43,226,0.25)',
@@ -55,15 +65,15 @@ export default function StatsPage() {
     enabled: !!activeBudget,
   });
 
-  const totalSpent  = expenses.reduce((a: number, e) => a + Number((e as any).amount_in_budget_currency), 0);
+  const totalSpent  = (expenses as Expense[]).reduce((a: number, e) => a + Number(e.amount_in_budget_currency), 0);
   const spentPct    = activeBudget ? Math.min((totalSpent / activeBudget.total_amount) * 100, 100) : 0;
 
   const catBreakdown: Record<string, number> = {};
-  expenses.forEach((e) => { catBreakdown[(e as any).category] = (catBreakdown[(e as any).category] || 0) + Number((e as any).amount_in_budget_currency); });
+  (expenses as Expense[]).forEach((e) => { catBreakdown[e.category] = (catBreakdown[e.category] || 0) + Number(e.amount_in_budget_currency); });
   const sortedCats = Object.entries(catBreakdown).sort((a, b) => b[1] - a[1]);
 
   const byDate: Record<string, number> = {};
-  expenses.forEach((e) => { byDate[(e as any).expense_date] = (byDate[(e as any).expense_date] || 0) + Number((e as any).amount_in_budget_currency); });
+  (expenses as Expense[]).forEach((e) => { byDate[e.expense_date] = (byDate[e.expense_date] || 0) + Number(e.amount_in_budget_currency); });
   const dateEntries = Object.entries(byDate).sort((a, b) => a[0].localeCompare(b[0]));
   const bestDay  = dateEntries.reduce((best, d) => d[1] < best[1] ? d : best, dateEntries[0] || ['—', 0]);
   const worstDay = dateEntries.reduce((worst, d) => d[1] > worst[1] ? d : worst, dateEntries[0] || ['—', 0]);

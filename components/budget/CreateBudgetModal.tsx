@@ -101,8 +101,9 @@ export const CreateBudgetModal: React.FC<Props> = ({ isOpen, onClose, onCreated 
       setActiveBudget(data);
       onCreated();
 
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to create budget');
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Failed to create budget';
+      toast.error(msg);
     } finally {
       setIsLoading(false);
     }

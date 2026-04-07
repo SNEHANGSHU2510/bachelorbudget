@@ -123,7 +123,7 @@ function GoogleIcon() {
   );
 }
 
-export default function AuthPage() {
+function AuthContent() {
   const searchParams = useSearchParams();
   const initMode = (searchParams.get('mode') === 'signup' ? 'signup' : 'signin') as Mode;
 
@@ -309,5 +309,19 @@ export default function AuthPage() {
         }
       `}</style>
     </div>
+  );
+}
+
+export default function AuthPage() {
+  return (
+    <React.Suspense fallback={
+      <div style={{ minHeight: '100vh', backgroundColor: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}>
+          <RefreshCw size={40} color={C.primary} />
+        </motion.div>
+      </div>
+    }>
+      <AuthContent />
+    </React.Suspense>
   );
 }

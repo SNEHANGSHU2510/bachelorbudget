@@ -96,8 +96,9 @@ export const AddExpenseModal: React.FC<Props> = ({ isOpen, onClose }) => {
       setAmount('');
       setNote('');
       onClose();
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to add expense');
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Failed to add expense';
+      toast.error(msg);
     } finally {
       setIsLoading(false);
     }

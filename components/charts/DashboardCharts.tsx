@@ -7,7 +7,7 @@ import {
 } from 'recharts';
 import { useQuery } from '@tanstack/react-query';
 import { createBrowserClient } from '@supabase/ssr';
-import { format, eachDayOfInterval, startOfDay } from 'date-fns';
+import { format, eachDayOfInterval } from 'date-fns';
 
 const COLORS = ['#7c3aed', '#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#6366f1'];
 
@@ -88,6 +88,7 @@ export const TrendChart = ({
         <Tooltip
           contentStyle={{ backgroundColor: '#1a1a24', border: '1px solid #2a2a3a', borderRadius: '8px' }}
           itemStyle={{ color: '#f1f5f9' }}
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           formatter={(val: any) => `${currency}${Number(val).toFixed(0)}`}
         />
         <Legend wrapperStyle={{ paddingTop: '20px' }} />
@@ -135,6 +136,7 @@ export const CategoryPieChart = ({
         <Tooltip
           contentStyle={{ backgroundColor: '#1a1a24', border: '1px solid #2a2a3a', borderRadius: '8px' }}
           itemStyle={{ color: '#f1f5f9' }}
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           formatter={(val: any) => `${currency}${Number(val).toFixed(0)}`}
         />
         <Legend verticalAlign="bottom" height={36} />
