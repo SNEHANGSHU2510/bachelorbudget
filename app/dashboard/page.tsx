@@ -120,14 +120,16 @@ export default function DashboardPage() {
   const dynamicDaily    = activeBudget ? Math.max(0, remaining) / Math.max(1, daysLeft) : 0;
   
   // Adopt dynamic calculation ONLY when the total remaining budget drops below the base daily allowance
-  const dailyBudget    = remaining < baseDailyBudget ? dynamicDaily : baseDailyBudget;
+  const isAusterityMode = remaining < baseDailyBudget;
+  const dailyBudget     = isAusterityMode ? dynamicDaily : baseDailyBudget;
 
-
-  const carryForward   = reserveData?.reserve ?? 0;
-  const effectiveDaily = dailyBudget + carryForward;
-  const spentPct       = activeBudget ? Math.min((totalSpent / activeBudget.total_amount) * 100, 100) : 0;
+  const carryForward    = reserveData?.reserve ?? 0;
+  // During strict austerity rationing, prior theoretical "reserves" are bypassed 
+  // and the effective budget locks exactly to the mathematically reduced daily limit.
+  const effectiveDaily  = isAusterityMode ? dailyBudget : dailyBudget + carryForward;
+  const spentPct        = activeBudget ? Math.min((totalSpent / activeBudget.total_amount) * 100, 100) : 0;
   
-  const cards          = activeBudget ? STAT_CARDS(activeBudget.total_amount, totalSpent, remaining, dailyBudget) : [];
+  const cards           = activeBudget ? STAT_CARDS(activeBudget.total_amount, totalSpent, remaining, dailyBudget) : [];
 
   const handleBudgetCreated = () => {
     queryClient.invalidateQueries({ queryKey: ['budgets'] });
@@ -316,10 +318,13 @@ export default function DashboardPage() {
           <div style={{ fontSize: '11px', color: C.textMuted, marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Today&apos;s Effective Budget</div>
           <div style={{ fontSize: '12px', color: C.textMuted, marginBottom: '8px', fontFamily: 'var(--font-mono)' }}>
             {activeBudget?.currency}{dailyBudget.toFixed(0)}
-            {carryForward !== 0 && (
+            {carryForward !== 0 && !isAusterityMode && (
               <span style={{ color: carryForward > 0 ? C.cyan : C.red, marginLeft: '4px' }}>
                 {carryForward > 0 ? `+${activeBudget?.currency}${carryForward.toFixed(0)}` : `-${activeBudget?.currency}${Math.abs(carryForward).toFixed(0)}`}
               </span>
+            )}
+            {isAusterityMode && (
+              <span style={{ color: C.red, marginLeft: '6px', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>(Strict Mode)</span>
             )}
           </div>
           <div style={{ fontSize: '44px', fontWeight: 900, letterSpacing: '-0.04em', background: `linear-gradient(135deg, #dcb8ff, ${C.cyan})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', lineHeight: 1 }}>
