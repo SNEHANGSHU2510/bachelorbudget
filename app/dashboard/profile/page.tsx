@@ -90,8 +90,12 @@ export default function ProfilePage() {
     
     setIsLoading(true);
     try {
-      const { error } = await supabase.from('budgets').delete().eq('id', budgetId);
-      if (error) throw error;
+      // Delete dependencies via Supabase JS to avoid FK constraint errors, since ON DELETE CASCADE is likely absent
+      const { error: expError } = await supabase.from('expenses').delete().eq('budget_id', budgetId);
+      if (expError) throw expError;
+
+      const { error: bError } = await supabase.from('budgets').delete().eq('id', budgetId);
+      if (bError) throw bError;
       
       toast.success('Workspace deleted successfully');
       
@@ -386,17 +390,6 @@ CREATE POLICY "Authed Upload" ON storage.objects FOR INSERT WITH CHECK (bucket_i
                                 Active
                               </div>
                             )}
-                            <button 
-                              onClick={(e) => handleDeleteBudget(e, b.id)}
-                              style={{ 
-                                background: 'rgba(255, 60, 100, 0.1)', border: '1px solid rgba(255, 60, 100, 0.2)',
-                                borderRadius: '10px', width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                cursor: 'pointer', color: '#ff3c64', padding: 0
-                              }}
-                              title="Delete Workspace"
-                            >
-                              <Trash2 size={14} />
-                            </button>
                           </div>
                         </div>
 
@@ -406,11 +399,28 @@ CREATE POLICY "Authed Upload" ON storage.objects FOR INSERT WITH CHECK (bucket_i
                            {new Date(b.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                         </div>
                         
-                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                          <span style={{ fontSize: '28px', fontWeight: 900, color: isActive ? '#fff' : '#e4e1e9' }}>
-                            {b.currency}{b.total_amount.toLocaleString()}
-                          </span>
-                          <span style={{ fontSize: '14px', color: '#988ca0', fontWeight: 500 }}>limit</span>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '12px' }}>
+                          <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                            <span style={{ fontSize: '28px', fontWeight: 900, color: isActive ? '#fff' : '#e4e1e9' }}>
+                              {b.currency}{b.total_amount.toLocaleString()}
+                            </span>
+                            <span style={{ fontSize: '14px', color: '#988ca0', fontWeight: 500 }}>limit</span>
+                          </div>
+
+                          <button 
+                            onClick={(e) => handleDeleteBudget(e, b.id)}
+                            style={{ 
+                              background: 'rgba(255, 60, 100, 0.05)', border: '1px solid rgba(255, 60, 100, 0.2)',
+                              borderRadius: '10px', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '6px',
+                              cursor: 'pointer', color: '#ff3c64', fontSize: '13px', fontWeight: 700,
+                              transition: 'all 0.2s', position: 'relative', zIndex: 10
+                            }}
+                            onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(255, 60, 100, 0.15)'; e.currentTarget.style.transform = 'scale(1.05)' }}
+                            onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(255, 60, 100, 0.05)'; e.currentTarget.style.transform = 'scale(1)' }}
+                            title="Delete Workspace"
+                          >
+                            <Trash2 size={15} /> Delete Budget
+                          </button>
                         </div>
 
                         <div style={{ marginTop: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

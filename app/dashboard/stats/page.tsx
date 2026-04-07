@@ -5,7 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { createBrowserClient } from '@supabase/ssr';
 import { useAppStore } from '@/lib/store';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, differenceInDays } from 'date-fns';
+import { ExportInvoiceButton } from '@/components/pdf/ExportInvoiceButton';
 import { Sparkles, TrendingUp, TrendingDown, Award, MessageCircle, Send, RefreshCw, BarChart3, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -104,17 +105,27 @@ export default function StatsPage() {
     { label: 'Avg / Day', sub: `over ${dateEntries.length} days`, val: `${activeBudget.currency}${avgDay.toFixed(0)}`, icon: TrendingUp, color: C.pink, glow: 'rgba(255,176,206,0.15)', grad: C.pinkDim },
   ];
 
+  const isBudgetCompleted = activeBudget ? differenceInDays(new Date(activeBudget.end_date), new Date()) <= 0 : false;
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', padding: '24px 16px' }} className="stats-content">
+    <div id="report-capture-zone" style={{ display: 'flex', flexDirection: 'column', gap: '24px', padding: '24px 16px', background: C.bg }} className="stats-content">
 
       {/* Ambient top glow */}
       <div style={{ position: 'fixed', top: 0, left: 0, right: 0, height: '1px', background: `linear-gradient(90deg, transparent, ${C.primary}, ${C.cyan}, transparent)`, zIndex: 10, opacity: 0.5, pointerEvents: 'none' }} />
 
       {/* ── Heading ─────────────────────────────────────────────────────────── */}
-      <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }}>
-        <h1 style={{ fontSize: '28px', fontWeight: 800, margin: 0, fontFamily: 'var(--font-display)', letterSpacing: '-0.03em', color: C.text }}>Statistics & Insights</h1>
-        <p style={{ color: C.textMuted, fontSize: '14px', margin: '6px 0 0' }}>Budget analysis and AI-powered recommendations</p>
-      </motion.div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
+        <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }}>
+          <h1 style={{ fontSize: '28px', fontWeight: 800, margin: 0, fontFamily: 'var(--font-display)', letterSpacing: '-0.03em', color: C.text }}>Statistics & Insights</h1>
+          <p style={{ color: C.textMuted, fontSize: '14px', margin: '6px 0 0' }}>Budget analysis and AI-powered recommendations</p>
+        </motion.div>
+        
+        {isBudgetCompleted && (
+          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.2 }}>
+            <ExportInvoiceButton />
+          </motion.div>
+        )}
+      </div>
 
       {/* ── 3 insight cards ─────────────────────────────────────────────────── */}
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.06 }}
