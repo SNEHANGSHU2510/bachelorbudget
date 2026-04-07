@@ -14,12 +14,14 @@ const NAV_ITEMS = [
   { name: 'Dashboard',  href: '/dashboard',          icon: Home,    color: '#8a2be2' },
   { name: 'Expenses',   href: '/dashboard/expenses', icon: History, color: '#00fbfb' },
   { name: 'Statistics', href: '/dashboard/stats',    icon: PieChart,color: '#ffb0ce' },
+  { name: 'Profile',    href: '/dashboard/profile',  icon: Wallet,  color: '#c084fc' },
 ];
 
 const PAGE_TITLES: Record<string, string> = {
   '/dashboard':          'Overview',
   '/dashboard/expenses': 'Expense History',
   '/dashboard/stats':    'Statistics & Insights',
+  '/dashboard/profile':  'Profile & Settings',
 };
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
