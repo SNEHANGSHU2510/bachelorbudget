@@ -117,11 +117,11 @@ export default function DashboardPage() {
   const daysLeft       = activeBudget ? Math.max(1, differenceInDays(new Date(activeBudget.end_date), today) + 1) : 0;
 
   const baseDailyBudget = activeBudget ? activeBudget.total_amount / (activeBudget.duration_days || 1) : 0;
-  // Dynamic daily based on remaining budget and remaining days
   const dynamicDaily    = activeBudget ? Math.max(0, remaining) / Math.max(1, daysLeft) : 0;
   
-  // Adopt dynamic calculation if it drops below the base to restrict overspending
-  const dailyBudget    = dynamicDaily < baseDailyBudget ? dynamicDaily : baseDailyBudget;
+  // Adopt dynamic calculation ONLY when the total remaining budget drops below the base daily allowance
+  const dailyBudget    = remaining < baseDailyBudget ? dynamicDaily : baseDailyBudget;
+
 
   const carryForward   = reserveData?.reserve ?? 0;
   const effectiveDaily = dailyBudget + carryForward;
