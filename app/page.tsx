@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
+import { motion, useScroll, useTransform } from 'framer-motion';
 import { 
   Wallet, Sparkles, Activity, ArrowRight, Shield, 
   TrendingUp, Clock, CheckCircle, ChevronDown, Zap

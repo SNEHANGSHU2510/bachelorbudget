@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -123,7 +123,7 @@ function GoogleIcon() {
   );
 }
 
-export default function AuthPage() {
+function AuthContent() {
   const searchParams = useSearchParams();
   const initMode = (searchParams.get('mode') === 'signup' ? 'signup' : 'signin') as Mode;
 
@@ -307,5 +307,23 @@ export default function AuthPage() {
         }
       `}</style>
     </div>
+  );
+}
+
+export default function AuthPage() {
+  return (
+    <Suspense fallback={
+      <div style={{ minHeight: '100vh', backgroundColor: '#131318', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <motion.div 
+          animate={{ rotate: 360 }} 
+          transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
+          style={{ color: '#8a2be2' }}
+        >
+          <RefreshCw size={40} />
+        </motion.div>
+      </div>
+    }>
+      <AuthContent />
+    </Suspense>
   );
 }

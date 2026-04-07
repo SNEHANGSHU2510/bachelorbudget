@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createBrowserClient } from '@supabase/ssr';
 import { useAppStore } from '@/lib/store';
@@ -44,7 +44,7 @@ const C = {
   green: '#00dddd',
 };
 
-const STAT_CARDS = (total: number, spent: number, remaining: number, daily: number, currency: string) => [
+const STAT_CARDS = (total: number, spent: number, remaining: number, daily: number) => [
   { label: 'Total Budget',   value: total,     icon: Wallet,       accent: C.primary, glow: C.primaryGlow, grad: `linear-gradient(135deg, ${C.primaryDim}, transparent)` },
   { label: 'Total Spent',    value: spent,      icon: TrendingDown, accent: '#ff6b8a', glow: 'rgba(255,107,138,0.15)', grad: 'linear-gradient(135deg, rgba(255,107,138,0.06), transparent)' },
   { label: 'Remaining',      value: remaining,  icon: Target,       accent: remaining >= 0 ? C.cyan : '#ff6b8a', glow: remaining >= 0 ? C.cyanGlow : 'rgba(255,107,138,0.15)', grad: remaining >= 0 ? `linear-gradient(135deg, ${C.cyanDim}, transparent)` : 'linear-gradient(135deg, rgba(255,107,138,0.06), transparent)' },
@@ -79,7 +79,7 @@ export default function DashboardPage() {
         queryClient.invalidateQueries({ queryKey: ['expenses', activeBudget.id] });
       }).subscribe();
     return () => { supabase.removeChannel(ch); };
-  }, [activeBudget?.id]);
+  }, [activeBudget, queryClient]);
 
   const { data: stats } = useQuery({
     queryKey: ['stats', activeBudget?.id],
@@ -118,7 +118,7 @@ export default function DashboardPage() {
   const today          = new Date();
   const todayStr       = localDate(today);
   const daysLeft       = activeBudget ? Math.max(1, differenceInDays(new Date(activeBudget.end_date), today) + 1) : 0;
-  const cards          = activeBudget ? STAT_CARDS(activeBudget.total_amount, totalSpent, remaining, dailyBudget, activeBudget.currency) : [];
+  const cards          = activeBudget ? STAT_CARDS(activeBudget.total_amount, totalSpent, remaining, dailyBudget) : [];
 
   const handleBudgetCreated = () => {
     queryClient.invalidateQueries({ queryKey: ['budgets'] });
