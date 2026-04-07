@@ -88,7 +88,7 @@ export default function StatsPage() {
     try {
       const res = await fetch('/api/ai/advice', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: msg, budgetContext: { total: activeBudget.total_amount, spent: totalSpent, currency: activeBudget.currency, categories: catBreakdown } }) });
       const data = await res.json();
-      setAiResponse(data.advice || data.message || 'No response received.');
+      setAiResponse(data.advice || data.message || data.error || 'No response received.');
     } catch { toast.error('AI request failed'); }
     finally { setAiLoading(false); }
   };
