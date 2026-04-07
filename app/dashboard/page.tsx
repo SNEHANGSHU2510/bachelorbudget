@@ -111,13 +111,22 @@ export default function DashboardPage() {
 
   const totalSpent     = stats?.totalSpent || 0;
   const remaining      = activeBudget ? activeBudget.total_amount - totalSpent : 0;
-  const dailyBudget    = activeBudget ? activeBudget.total_amount / (activeBudget.duration_days || 1) : 0;
-  const carryForward   = reserveData?.reserve ?? 0;
-  const effectiveDaily = dailyBudget + carryForward;
-  const spentPct       = activeBudget ? Math.min((totalSpent / activeBudget.total_amount) * 100, 100) : 0;
+  
   const today          = new Date();
   const todayStr       = localDate(today);
   const daysLeft       = activeBudget ? Math.max(1, differenceInDays(new Date(activeBudget.end_date), today) + 1) : 0;
+
+  const baseDailyBudget = activeBudget ? activeBudget.total_amount / (activeBudget.duration_days || 1) : 0;
+  // Dynamic daily based on remaining budget and remaining days
+  const dynamicDaily    = activeBudget ? Math.max(0, remaining) / Math.max(1, daysLeft) : 0;
+  
+  // Adopt dynamic calculation if it drops below the base to restrict overspending
+  const dailyBudget    = dynamicDaily < baseDailyBudget ? dynamicDaily : baseDailyBudget;
+
+  const carryForward   = reserveData?.reserve ?? 0;
+  const effectiveDaily = dailyBudget + carryForward;
+  const spentPct       = activeBudget ? Math.min((totalSpent / activeBudget.total_amount) * 100, 100) : 0;
+  
   const cards          = activeBudget ? STAT_CARDS(activeBudget.total_amount, totalSpent, remaining, dailyBudget) : [];
 
   const handleBudgetCreated = () => {

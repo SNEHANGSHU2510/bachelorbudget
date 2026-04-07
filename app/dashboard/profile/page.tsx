@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/Input';
 import { CreateBudgetModal } from '@/components/budget/CreateBudgetModal';
 import { Modal } from '@/components/ui/Modal';
 import { toast } from 'sonner';
-import { Mail, Calendar, Wallet, Camera, ChevronRight, Plus, Settings, Shield, Bell, Sparkles } from 'lucide-react';
+import { Mail, Calendar, Wallet, Camera, ChevronRight, Plus, Settings, Shield, Bell, Sparkles, Trash2 } from 'lucide-react';
 import type { User } from '@supabase/supabase-js';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -82,6 +82,31 @@ export default function ProfilePage() {
   const handleSwitchBudget = (budget: Budget) => {
     setActiveBudget(budget);
     toast.success(`Active Workspace: ${budget.name}`);
+  };
+
+  const handleDeleteBudget = async (e: React.MouseEvent, budgetId: string) => {
+    e.stopPropagation();
+    if (!window.confirm('Are you sure you want to permanently delete this workspace and all internal expenses?')) return;
+    
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.from('budgets').delete().eq('id', budgetId);
+      if (error) throw error;
+      
+      toast.success('Workspace deleted successfully');
+      
+      const newBudgets = budgets.filter(b => b.id !== budgetId);
+      setBudgets(newBudgets);
+      
+      if (activeBudget?.id === budgetId) {
+        if (newBudgets.length > 0) setActiveBudget(newBudgets[0]);
+        else setActiveBudget(null);
+      }
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Error deleting budget');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -351,15 +376,28 @@ CREATE POLICY "Authed Upload" ON storage.objects FOR INSERT WITH CHECK (bucket_i
                           }}>
                             <Wallet size={24} color={isActive ? 'white' : '#cfc2d7'} />
                           </div>
-                          {isActive && (
-                            <div style={{ 
-                              padding: '6px 12px', borderRadius: '100px', 
-                              backgroundColor: 'rgba(138,43,226,0.15)', border: '1px solid rgba(138,43,226,0.3)',
-                              color: '#dcb8ff', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em'
-                            }}>
-                              Active
-                            </div>
-                          )}
+                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                            {isActive && (
+                              <div style={{ 
+                                padding: '6px 12px', borderRadius: '100px', 
+                                backgroundColor: 'rgba(138,43,226,0.15)', border: '1px solid rgba(138,43,226,0.3)',
+                                color: '#dcb8ff', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em'
+                              }}>
+                                Active
+                              </div>
+                            )}
+                            <button 
+                              onClick={(e) => handleDeleteBudget(e, b.id)}
+                              style={{ 
+                                background: 'rgba(255, 60, 100, 0.1)', border: '1px solid rgba(255, 60, 100, 0.2)',
+                                borderRadius: '10px', width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                cursor: 'pointer', color: '#ff3c64', padding: 0
+                              }}
+                              title="Delete Workspace"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
                         </div>
 
                         <h4 style={{ fontSize: '20px', fontWeight: 700, margin: '0 0 8px 0', color: '#e4e1e9' }}>{b.name}</h4>
