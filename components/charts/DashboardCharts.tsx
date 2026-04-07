@@ -7,7 +7,7 @@ import {
 } from 'recharts';
 import { useQuery } from '@tanstack/react-query';
 import { createBrowserClient } from '@supabase/ssr';
-import { format, eachDayOfInterval } from 'date-fns';
+import { format, eachDayOfInterval, startOfDay } from 'date-fns';
 
 const COLORS = ['#7c3aed', '#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#6366f1'];
 

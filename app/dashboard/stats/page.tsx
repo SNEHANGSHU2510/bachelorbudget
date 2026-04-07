@@ -45,7 +45,7 @@ export default function StatsPage() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
-  const { data: expenses = [] } = useQuery({
+  const { data: expenses = [], isLoading } = useQuery({
     queryKey: ['stats-expenses', activeBudget?.id],
     queryFn: async () => {
       if (!activeBudget) return [];
@@ -57,6 +57,7 @@ export default function StatsPage() {
 
   const totalSpent  = expenses.reduce((a: number, e: any) => a + Number(e.amount_in_budget_currency), 0);
   const spentPct    = activeBudget ? Math.min((totalSpent / activeBudget.total_amount) * 100, 100) : 0;
+  const remaining   = activeBudget ? activeBudget.total_amount - totalSpent : 0;
 
   const catBreakdown: Record<string, number> = {};
   expenses.forEach((e: any) => { catBreakdown[e.category] = (catBreakdown[e.category] || 0) + Number(e.amount_in_budget_currency); });

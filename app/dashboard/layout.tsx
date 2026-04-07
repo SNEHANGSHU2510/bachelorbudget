@@ -5,7 +5,7 @@ import { format } from 'date-fns';
 import { useAppStore } from '@/lib/store';
 import { createBrowserClient } from '@supabase/ssr';
 import { useRouter, usePathname } from 'next/navigation';
-import { Home, PieChart, History, Plus, LogOut, Wallet } from 'lucide-react';
+import { Home, PieChart, History, Plus, LogOut, Wallet, X } from 'lucide-react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AddExpenseModal } from '@/components/expenses/AddExpenseModal';
