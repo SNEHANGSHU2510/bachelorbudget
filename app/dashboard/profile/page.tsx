@@ -1,20 +1,22 @@
+/* eslint-disable @next/next/no-img-element */
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
-import { useAppStore } from '@/lib/store';
+import { useAppStore, type Budget } from '@/lib/store';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { CreateBudgetModal } from '@/components/budget/CreateBudgetModal';
 import { Modal } from '@/components/ui/Modal';
 import { toast } from 'sonner';
-import { User, Mail, Calendar, Wallet, Camera, ChevronRight, Check, Plus, Settings, Shield, Bell, Sparkles } from 'lucide-react';
+import { Mail, Calendar, Wallet, Camera, ChevronRight, Plus, Settings, Shield, Bell, Sparkles } from 'lucide-react';
+import type { User } from '@supabase/supabase-js';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function ProfilePage() {
-  const [user, setUser] = useState<any>(null);
-  const [budgets, setBudgets] = useState<any[]>([]);
+  const [user, setUser] = useState<User | null>(null);
+  const [budgets, setBudgets] = useState<Budget[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState('');
   const [bio, setBio] = useState('');
@@ -54,10 +56,12 @@ export default function ProfilePage() {
 
   useEffect(() => {
     fetchData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [supabase]);
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) return;
     setIsLoading(true);
     try {
       const { error } = await supabase.auth.updateUser({
@@ -65,17 +69,17 @@ export default function ProfilePage() {
       });
       if (error) throw error;
       
-      setUser({ ...user, user_metadata: { ...user.user_metadata, full_name: name, bio } });
+      setUser({ ...user, user_metadata: { ...user.user_metadata, full_name: name, bio } } as User);
       toast.success('Identity updated!');
       setIsEditing(false);
-    } catch (e: any) {
-      toast.error(e.message || 'Failed to update profile');
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : 'Failed to update profile');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleSwitchBudget = (budget: any) => {
+  const handleSwitchBudget = (budget: Budget) => {
     setActiveBudget(budget);
     toast.success(`Active Workspace: ${budget.name}`);
   };
@@ -121,10 +125,10 @@ CREATE POLICY "Authed Upload" ON storage.objects FOR INSERT WITH CHECK (bucket_i
       const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(filePath);
       const { error: updateError } = await supabase.auth.updateUser({ data: { avatar_url: publicUrl } });
       if (updateError) throw updateError;
-      setUser({ ...user, user_metadata: { ...user.user_metadata, avatar_url: publicUrl } });
+      setUser({ ...user, user_metadata: { ...user.user_metadata, avatar_url: publicUrl } } as User);
       toast.success('Profile avatar updated!');
-    } catch (e: any) {
-      toast.error(e.message || 'Failed to upload photo');
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : 'Failed to upload photo');
     } finally {
       setIsLoading(false);
     }
@@ -314,7 +318,7 @@ CREATE POLICY "Authed Upload" ON storage.objects FOR INSERT WITH CHECK (bucket_i
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
-                {budgets.map((b: any, idx: number) => {
+                {budgets.map((b: Budget, idx: number) => {
                   const isActive = activeBudget?.id === b.id;
                   return (
                     <motion.div 
