@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createBrowserClient } from '@supabase/ssr';
 import { useAppStore } from '@/lib/store';
@@ -44,7 +44,7 @@ const C = {
   green: '#00dddd',
 };
 
-const STAT_CARDS = (total: number, spent: number, remaining: number, daily: number, currency: string) => [
+const STAT_CARDS = (total: number, spent: number, remaining: number, daily: number) => [
   { label: 'Total Budget',   value: total,     icon: Wallet,       accent: C.primary, glow: C.primaryGlow, grad: `linear-gradient(135deg, ${C.primaryDim}, transparent)` },
   { label: 'Total Spent',    value: spent,      icon: TrendingDown, accent: '#ff6b8a', glow: 'rgba(255,107,138,0.15)', grad: 'linear-gradient(135deg, rgba(255,107,138,0.06), transparent)' },
   { label: 'Remaining',      value: remaining,  icon: Target,       accent: remaining >= 0 ? C.cyan : '#ff6b8a', glow: remaining >= 0 ? C.cyanGlow : 'rgba(255,107,138,0.15)', grad: remaining >= 0 ? `linear-gradient(135deg, ${C.cyanDim}, transparent)` : 'linear-gradient(135deg, rgba(255,107,138,0.06), transparent)' },
@@ -79,7 +79,7 @@ export default function DashboardPage() {
         queryClient.invalidateQueries({ queryKey: ['expenses', activeBudget.id] });
       }).subscribe();
     return () => { supabase.removeChannel(ch); };
-  }, [activeBudget?.id]);
+  }, [activeBudget, queryClient]);
 
   const { data: stats } = useQuery({
     queryKey: ['stats', activeBudget?.id],
@@ -118,7 +118,7 @@ export default function DashboardPage() {
   const today          = new Date();
   const todayStr       = localDate(today);
   const daysLeft       = activeBudget ? Math.max(1, differenceInDays(new Date(activeBudget.end_date), today) + 1) : 0;
-  const cards          = activeBudget ? STAT_CARDS(activeBudget.total_amount, totalSpent, remaining, dailyBudget, activeBudget.currency) : [];
+  const cards          = activeBudget ? STAT_CARDS(activeBudget.total_amount, totalSpent, remaining, dailyBudget) : [];
 
   const handleBudgetCreated = () => {
     queryClient.invalidateQueries({ queryKey: ['budgets'] });
@@ -169,7 +169,7 @@ export default function DashboardPage() {
       {/* ── Budget switcher ─────────────────────────────────────────────────── */}
       {budgets && budgets.length > 1 && (
         <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          {budgets.map((b: any) => (
+          {budgets.map((b) => (
             <motion.button key={b.id} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
               onClick={() => setActiveBudget(b)}
               style={{ padding: '8px 18px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', border: `1px solid ${activeBudget?.id === b.id ? C.primaryBorder : C.outline}`, background: activeBudget?.id === b.id ? C.primaryDim : 'transparent', color: activeBudget?.id === b.id ? '#dcb8ff' : C.textMuted }}>
@@ -304,7 +304,7 @@ export default function DashboardPage() {
         </div>
 
         <div style={{ textAlign: 'right', position: 'relative' }}>
-          <div style={{ fontSize: '11px', color: C.textMuted, marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Today's Effective Budget</div>
+          <div style={{ fontSize: '11px', color: C.textMuted, marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Today&apos;s Effective Budget</div>
           <div style={{ fontSize: '12px', color: C.textMuted, marginBottom: '8px', fontFamily: 'var(--font-mono)' }}>
             {activeBudget?.currency}{dailyBudget.toFixed(0)}
             {carryForward !== 0 && (

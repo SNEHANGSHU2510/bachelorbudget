@@ -45,7 +45,7 @@ export default function StatsPage() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
-  const { data: expenses = [], isLoading } = useQuery({
+  const { data: expenses = [] } = useQuery({
     queryKey: ['stats-expenses', activeBudget?.id],
     queryFn: async () => {
       if (!activeBudget) return [];
@@ -55,16 +55,15 @@ export default function StatsPage() {
     enabled: !!activeBudget,
   });
 
-  const totalSpent  = expenses.reduce((a: number, e: any) => a + Number(e.amount_in_budget_currency), 0);
+  const totalSpent  = expenses.reduce((a: number, e) => a + Number((e as any).amount_in_budget_currency), 0);
   const spentPct    = activeBudget ? Math.min((totalSpent / activeBudget.total_amount) * 100, 100) : 0;
-  const remaining   = activeBudget ? activeBudget.total_amount - totalSpent : 0;
 
   const catBreakdown: Record<string, number> = {};
-  expenses.forEach((e: any) => { catBreakdown[e.category] = (catBreakdown[e.category] || 0) + Number(e.amount_in_budget_currency); });
+  expenses.forEach((e) => { catBreakdown[(e as any).category] = (catBreakdown[(e as any).category] || 0) + Number((e as any).amount_in_budget_currency); });
   const sortedCats = Object.entries(catBreakdown).sort((a, b) => b[1] - a[1]);
 
   const byDate: Record<string, number> = {};
-  expenses.forEach((e: any) => { byDate[e.expense_date] = (byDate[e.expense_date] || 0) + Number(e.amount_in_budget_currency); });
+  expenses.forEach((e) => { byDate[(e as any).expense_date] = (byDate[(e as any).expense_date] || 0) + Number((e as any).amount_in_budget_currency); });
   const dateEntries = Object.entries(byDate).sort((a, b) => a[0].localeCompare(b[0]));
   const bestDay  = dateEntries.reduce((best, d) => d[1] < best[1] ? d : best, dateEntries[0] || ['—', 0]);
   const worstDay = dateEntries.reduce((worst, d) => d[1] > worst[1] ? d : worst, dateEntries[0] || ['—', 0]);
@@ -279,7 +278,7 @@ export default function StatsPage() {
                 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
                 style={{ padding: '18px', borderRadius: '14px', background: C.primaryDim, border: `1px solid ${C.primaryBorder}`, fontSize: '14px', color: C.textDim, lineHeight: 1.75, position: 'relative' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px', color: '#dcb8ff', fontWeight: 700, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                  <MessageCircle size={12} /> Gemini's Analysis
+                  <MessageCircle size={12} /> Gemini&apos;s Analysis
                 </div>
                 <div style={{ whiteSpace: 'pre-wrap' }}>{aiResponse}</div>
                 <button onClick={() => { setAiResponse(''); setAiMessage(''); }}

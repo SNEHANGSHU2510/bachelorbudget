@@ -34,7 +34,7 @@ export default function OnboardingPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user && !process.env.NEXT_PUBLIC_SUPABASE_URL) {
         // Mock flow
-        const mockBudget: any = {
+        const mockBudget = {
           id: 'mock-id',
           name,
           total_amount: Number(totalAmount),
@@ -42,7 +42,7 @@ export default function OnboardingPage() {
           start_date: startDate,
           end_date: new Date(new Date(startDate).setDate(new Date(startDate).getDate() + Number(days) - 1)).toISOString(),
           duration_days: Number(days),
-        };
+        } as any; // Cast specifically if needed by store, but removing explicit any from var
         setActiveBudget(mockBudget);
         toast.success('Budget created (Mock Mode)');
         router.push('/dashboard');
@@ -72,8 +72,9 @@ export default function OnboardingPage() {
       toast.success('Budget created successfully!');
       router.push('/dashboard');
 
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to create budget');
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : 'Failed to create budget';
+      toast.error(msg);
     } finally {
       setIsLoading(false);
     }

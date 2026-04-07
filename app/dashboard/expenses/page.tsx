@@ -72,8 +72,9 @@ export default function ExpensesPage() {
       queryClient.invalidateQueries({ queryKey: ['stats', activeBudget!.id] });
       queryClient.invalidateQueries({ queryKey: ['reserve', activeBudget!.id] });
       toast.success('Expense deleted');
-    } catch (e: any) {
-      toast.error(e.message);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Failed to delete expense';
+      toast.error(msg);
     } finally {
       setDeleting(null);
     }
@@ -238,7 +239,7 @@ export default function ExpensesPage() {
                 </div>
 
                 {/* Expense rows */}
-                {dayExps.map((expense: any, rowIdx) => {
+                {dayExps.map((expense, rowIdx) => {
                   const meta = CATEGORY_META[expense.category] || CATEGORY_META.other;
                   const isDeleting = deletingId === expense.id;
                   return (

@@ -148,8 +148,9 @@ export default function AuthPage() {
         toast.success('Account created! Check your email to verify.');
         setMode('signin');
       }
-    } catch (e: any) {
-      toast.error(e.message || 'Authentication failed');
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Authentication failed';
+      toast.error(msg);
     } finally {
       setIsLoading(false);
     }
@@ -163,8 +164,9 @@ export default function AuthPage() {
         options: { redirectTo: `${window.location.origin}/auth/callback` },
       });
       if (error) throw error;
-    } catch (e: any) {
-      toast.error(e.message || 'Google sign-in failed');
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Google sign-in failed';
+      toast.error(msg);
       setIsLoading(false);
     }
   };
