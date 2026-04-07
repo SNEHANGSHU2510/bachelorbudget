@@ -112,7 +112,11 @@ export const AddExpenseModal: React.FC<Props> = ({ isOpen, onClose }) => {
           <label style={{ fontSize: '14px', fontWeight: 500, color: '#94a3b8', display: 'block', marginBottom: '10px' }}>
             Category
           </label>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))', 
+            gap: '8px' 
+          }}>
             {CATEGORIES.map(cat => (
               <button
                 key={cat.value}
@@ -164,13 +168,16 @@ export const AddExpenseModal: React.FC<Props> = ({ isOpen, onClose }) => {
               boxSizing: 'border-box',
               fontFamily: 'JetBrains Mono, monospace',
             }}
-            autoFocus
           />
         </div>
 
         {/* Date and Note row */}
-        <div style={{ display: 'flex', gap: '12px' }}>
-          <div style={{ flex: 1 }}>
+        <div style={{ 
+          display: 'flex', 
+          flexWrap: 'wrap',
+          gap: '12px' 
+        }}>
+          <div style={{ flex: '1 1 140px' }}>
             <Input
               type="date"
               label="Date"
@@ -178,7 +185,7 @@ export const AddExpenseModal: React.FC<Props> = ({ isOpen, onClose }) => {
               onChange={e => setExpenseDate(e.target.value)}
             />
           </div>
-          <div style={{ flex: 2 }}>
+          <div style={{ flex: '1 1 200px' }}>
             <Input
               type="text"
               label="Note (Optional)"

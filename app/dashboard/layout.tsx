@@ -56,7 +56,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const currentTitle = PAGE_TITLES[pathname] || 'Overview';
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#131318', color: '#e4e1e9', fontFamily: "var(--font-sans), sans-serif" }}>
+    <div style={{ 
+      minHeight: '100dvh', 
+      backgroundColor: '#131318', 
+      color: '#e4e1e9', 
+      fontFamily: "var(--font-sans), sans-serif",
+      position: 'relative',
+      overflowX: 'hidden'
+    }}>
 
       {/* ── SIDEBAR BACKDROP (Mobile) ────────────────────────────────────────── */}
       <AnimatePresence>
@@ -93,6 +100,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           backdropFilter: 'blur(30px)',
           padding: '24px 0', display: 'flex', flexDirection: 'column',
           position: 'fixed', top: 0, bottom: 0, zIndex: 110,
+          overflowY: 'auto',
         }}
         className="sidebar-container"
       >
@@ -162,19 +170,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         )}
 
         {/* Sign out */}
-        <div style={{ padding: '0 12px' }}>
+        <div style={{ padding: '0 12px', marginTop: 'auto', marginBottom: '24px' }}>
           <motion.button
             onClick={handleLogout}
-            whileHover={{ x: 2 }}
-            whileTap={{ scale: 0.97 }}
+            whileHover={{ x: 2, backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }}
+            whileTap={{ scale: 0.95 }}
             style={{
               width: '100%', display: 'flex', alignItems: 'center', gap: '12px',
-              padding: '11px 14px', borderRadius: '12px', border: 'none',
-              background: 'transparent', color: '#cfc2d7', fontWeight: 500,
-              fontSize: '15px', cursor: 'pointer', transition: 'color 0.2s',
+              padding: '14px 16px', borderRadius: '12px', border: 'none',
+              background: 'transparent', color: '#cfc2d7', fontWeight: 600,
+              fontSize: '15px', cursor: 'pointer', transition: 'all 0.25s',
             }}
-            onMouseEnter={e => (e.currentTarget.style.color = '#ef4444')}
-            onMouseLeave={e => (e.currentTarget.style.color = '#cfc2d7')}
           >
             <LogOut size={18} />
             Sign Out
@@ -302,16 +308,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <style>{`
         @media (min-width: 768px) {
           .sidebar-container { 
-            position: sticky !important; 
+            position: fixed !important; 
+            width: 240px !important;
             height: 100vh !important;
             transform: none !important;
             opacity: 1 !important;
           }
+          main { margin-left: 240px !important; }
           .md\\:hidden { display: none !important; }
-          main { padding-left: 0; }
         }
         @media (max-width: 767px) {
-          main { padding-left: 0 !important; }
+          main { margin-left: 0 !important; width: 100vw !important; }
           header { padding: 0 16px !important; }
           .sidebar-container { box-shadow: 20px 0 50px rgba(0,0,0,0.5); }
         }

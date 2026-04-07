@@ -120,8 +120,8 @@ export const CreateBudgetModal: React.FC<Props> = ({ isOpen, onClose, onCreated 
           required
         />
 
-        <div style={{ display: 'flex', gap: '12px' }}>
-          <div style={{ flex: 1 }}>
+        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+          <div style={{ flex: '1 1 180px' }}>
             <Input
               type="number"
               label="Total Amount"
@@ -132,7 +132,7 @@ export const CreateBudgetModal: React.FC<Props> = ({ isOpen, onClose, onCreated 
               min="1"
             />
           </div>
-          <div style={{ width: '160px' }}>
+          <div style={{ flex: '1 1 140px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <label style={{ fontSize: '14px', fontWeight: 500, color: '#94a3b8' }}>Currency</label>
               <select
@@ -148,6 +148,7 @@ export const CreateBudgetModal: React.FC<Props> = ({ isOpen, onClose, onCreated 
                   color: '#f1f5f9',
                   appearance: 'none',
                   cursor: 'pointer',
+                  width: '100%',
                 }}
               >
                 {CURRENCIES.map(c => (
@@ -158,8 +159,8 @@ export const CreateBudgetModal: React.FC<Props> = ({ isOpen, onClose, onCreated 
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '12px' }}>
-          <div style={{ flex: 1 }}>
+        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+          <div style={{ flex: '1 1 140px' }}>
             <Input
               type="date"
               label="Start Date"
@@ -168,7 +169,7 @@ export const CreateBudgetModal: React.FC<Props> = ({ isOpen, onClose, onCreated 
               required
             />
           </div>
-          <div style={{ flex: 1 }}>
+          <div style={{ flex: '1 1 100px' }}>
             <Input
               type="number"
               label="Duration (Days)"
