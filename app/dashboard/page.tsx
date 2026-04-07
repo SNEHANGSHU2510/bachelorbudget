@@ -77,6 +77,8 @@ export default function DashboardPage() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'expenses', filter: `budget_id=eq.${activeBudget.id}` }, () => {
         queryClient.invalidateQueries({ queryKey: ['stats', activeBudget.id] });
         queryClient.invalidateQueries({ queryKey: ['expenses', activeBudget.id] });
+        queryClient.invalidateQueries({ queryKey: ['todayExp', activeBudget.id] });
+        queryClient.invalidateQueries({ queryKey: ['reserve', activeBudget.id] });
       }).subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [activeBudget, queryClient]);
@@ -105,6 +107,17 @@ export default function DashboardPage() {
       const { data: exps } = await supabase.from('expenses').select('amount_in_budget_currency').eq('budget_id', activeBudget.id).eq('expense_date', yDate);
       const spent = (exps || []).reduce((s, e) => s + Number(e.amount_in_budget_currency), 0);
       return { date: yDate, allocated: dailyAlloc, spent, reserve: dailyAlloc - spent };
+    },
+    enabled: !!activeBudget,
+  });
+
+  const { data: todaySpentData } = useQuery({
+    queryKey: ['todayExp', activeBudget?.id],
+    queryFn: async () => {
+      if (!activeBudget) return 0;
+      const tDate = localDate(new Date());
+      const { data: exps } = await supabase.from('expenses').select('amount_in_budget_currency').eq('budget_id', activeBudget.id).eq('expense_date', tDate);
+      return (exps || []).reduce((s, e) => s + Number(e.amount_in_budget_currency), 0);
     },
     enabled: !!activeBudget,
   });
@@ -332,6 +345,51 @@ export default function DashboardPage() {
           </div>
         </div>
       </motion.div>
+
+      {/* ── Today's Usage Bar ────────────────────────────────────────────── */}
+      {activeBudget && (
+        <motion.div
+          initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.45 }}
+          style={{ padding: '24px 28px', borderRadius: '24px', background: C.surface, border: `1px solid ${C.outline}` }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <div>
+              <span style={{ fontWeight: 700, fontSize: '15px', color: C.text, fontFamily: 'var(--font-display)' }}>Today&apos;s Usage</span>
+              <span style={{ fontSize: '12px', color: C.textMuted, marginLeft: '8px' }}>{new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}</span>
+            </div>
+            {todaySpentData !== undefined && effectiveDaily > 0 && (
+              <span style={{
+                fontSize: '15px', fontWeight: 700, fontFamily: 'var(--font-mono)',
+                color: (todaySpentData / effectiveDaily) > 0.9 ? C.red : (todaySpentData / effectiveDaily) > 0.6 ? '#fbbf24' : C.cyan
+              }}>
+                {((todaySpentData / effectiveDaily) * 100 || 0).toFixed(1)}%
+              </span>
+            )}
+          </div>
+          
+          {todaySpentData !== undefined && effectiveDaily >= 0 && (
+            <>
+              <div style={{ height: '14px', borderRadius: '100px', background: 'rgba(255,255,255,0.05)', overflow: 'hidden', position: 'relative' }}>
+                <motion.div
+                  initial={{ width: 0 }} animate={{ width: `${Math.min(100, (todaySpentData / (effectiveDaily || 1)) * 100)}%` }}
+                  transition={{ duration: 1.2, ease: "easeOut", delay: 0.5 }}
+                  style={{
+                    height: '100%', borderRadius: '100px',
+                    background: (todaySpentData / (effectiveDaily || 1)) > 0.9 ? 'linear-gradient(90deg, #ff6b8a, #ff4d6d)' : (todaySpentData / (effectiveDaily || 1)) > 0.6 ? 'linear-gradient(90deg, #fbbf24, #f59e0b)' : `linear-gradient(90deg, ${C.cyan}, ${C.primary})`,
+                    boxShadow: (todaySpentData / (effectiveDaily || 1)) > 0.9 ? '0 0 12px rgba(255,107,138,0.5)' : `0 0 12px ${C.cyanGlow}`,
+                  }}
+                />
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '12px', fontSize: '13px', color: C.textMuted }}>
+                <span style={{ fontFamily: 'var(--font-mono)' }}>{activeBudget.currency}{(todaySpentData).toFixed(0)} spent</span>
+                <span style={{ fontFamily: 'var(--font-mono)', color: C.text }}>{activeBudget.currency}{Math.max(0, effectiveDaily - todaySpentData).toFixed(0)} remaining</span>
+                <span style={{ fontFamily: 'var(--font-mono)' }}>{activeBudget.currency}{(effectiveDaily).toFixed(0)} limit</span>
+              </div>
+            </>
+          )}
+        </motion.div>
+      )}
 
       {/* ── Charts ──────────────────────────────────────────────────────────── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
