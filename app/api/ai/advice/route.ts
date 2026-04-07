@@ -4,16 +4,14 @@ import { NextResponse } from 'next/server';
 
 export async function POST(req: Request) {
   try {
-    const { budget, stats, categories } = await req.json();
+    const { message } = await req.json();
 
     const prompt = `
       You are a smart personal finance advisor for a bachelor/student. 
-      Analyze the following spending data and give one paragraph of highly actionable, specific advice.
-      Budget: ${budget.total_amount} ${budget.currency} for ${budget.duration_days} days.
-      Spent: ${stats.totalSpent} ${budget.currency}.
-      Categories: ${JSON.stringify(categories)}
+      Analyze the financial condition described below and give actionable, specific advice.
+      User's Condition/Question: "${message}"
 
-      Keep it concise, supportive, but direct. If they are overspending, suggest exactly where to cut.
+      Keep it concise, supportive, and direct. Use markdown formatting to make the answer highly readable.
     `;
 
     const { text } = await generateText({
