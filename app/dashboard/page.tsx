@@ -10,6 +10,7 @@ import { Wallet, TrendingDown, Target, Clock, Activity, Plus, RefreshCw, Zap, La
 import CountUp from 'react-countup';
 import { TrendChart, CategoryPieChart } from '@/components/charts/DashboardCharts';
 import { CreateBudgetModal } from '@/components/budget/CreateBudgetModal';
+import { ExportInvoiceButton } from '@/components/pdf/ExportInvoiceButton';
 import { toast } from 'sonner';
 
 const supabase = createBrowserClient(
@@ -127,7 +128,9 @@ export default function DashboardPage() {
   
   const today          = new Date();
   const todayStr       = localDate(today);
-  const daysLeft       = activeBudget ? Math.max(1, differenceInDays(new Date(activeBudget.end_date), today) + 1) : 0;
+  const diffDaysZeroIdx = activeBudget ? differenceInDays(new Date(activeBudget.end_date), today) : 0;
+  const daysLeft       = activeBudget ? Math.max(1, diffDaysZeroIdx + 1) : 0;
+  const isBudgetLocked = activeBudget ? (remaining <= 0 || diffDaysZeroIdx <= 0) : false;
 
   const baseDailyBudget = activeBudget ? activeBudget.total_amount / (activeBudget.duration_days || 1) : 0;
   const dynamicDaily    = activeBudget ? Math.max(0, remaining) / Math.max(1, daysLeft) : 0;
@@ -207,6 +210,21 @@ export default function DashboardPage() {
         </motion.div>
       )}
 
+      {isBudgetLocked && (
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+          style={{ padding: '24px', borderRadius: '20px', background: `linear-gradient(135deg, rgba(255,107,138,0.1), rgba(138,43,226,0.1))`, border: `1px solid ${C.red}40`, display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '20px' }}>
+          <div>
+            <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: C.text, fontFamily: 'var(--font-display)' }}>Budget Execution Completed</h3>
+            <p style={{ margin: '6px 0 0', fontSize: '14px', color: C.textDim }}>This workspace is now locked in read-only mode to preserve its final evaluation. Download your official expense invoice report for record-keeping.</p>
+          </div>
+           {activeBudget && (
+            <ExportInvoiceButton />
+          )}
+        </motion.div>
+      )}
+
+      <div id="report-capture-zone" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       {/* ── Stat cards ──────────────────────────────────────────────────────── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px' }}>
         {cards.map((card, i) => {
@@ -417,6 +435,7 @@ export default function DashboardPage() {
           </div>
           <CategoryPieChart categoryData={stats?.categoryBreakdown || {}} currency={activeBudget?.currency} />
         </motion.div>
+      </div>
       </div>
 
       <CreateBudgetModal isOpen={isBudgetModalOpen} onClose={() => setIsBudgetModalOpen(false)} onCreated={handleBudgetCreated} />

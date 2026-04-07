@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createBrowserClient } from '@supabase/ssr';
 import { useAppStore } from '@/lib/store';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, differenceInDays } from 'date-fns';
 import { Search, Trash2, Calendar, TrendingDown, Receipt, SlidersHorizontal } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -43,6 +43,18 @@ export default function ExpensesPage() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
+
+  const { data: isLocked } = useQuery({
+    queryKey: ['budgetLock', activeBudget?.id],
+    queryFn: async () => {
+      if (!activeBudget) return false;
+      if (differenceInDays(new Date(activeBudget.end_date), new Date()) <= 0) return true;
+      const { data } = await supabase.from('expenses').select('amount_in_budget_currency').eq('budget_id', activeBudget.id);
+      const spent = (data || []).reduce((a, r) => a + Number(r.amount_in_budget_currency), 0);
+      return spent >= activeBudget.total_amount;
+    },
+    enabled: !!activeBudget,
+  });
 
   const { data: expenses = [], isLoading } = useQuery({
     queryKey: ['expenses', activeBudget?.id],
@@ -278,23 +290,25 @@ export default function ExpensesPage() {
                           </div>
                         </div>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexShrink: 0 }}>
-                        <span style={{ fontWeight: 700, fontSize: '16px', color: C.red, fontFamily: 'var(--font-mono)' }}>
-                          -{activeBudget.currency}{Number(expense.amount_in_budget_currency).toFixed(0)}
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
+                        <span style={{ fontSize: '16px', fontWeight: 700, color: C.text, fontFamily: 'var(--font-mono)' }}>
+                          {activeBudget?.currency}{Number(expense.amount_in_budget_currency).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                         </span>
-                        <motion.button
-                          whileHover={{ scale: 1.15, backgroundColor: 'rgba(255,107,138,0.1)' }}
-                          whileTap={{ scale: 0.9 }}
-                          disabled={isDeleting}
-                          onClick={() => handleDelete(expense.id, Number(expense.amount_in_budget_currency), expense.expense_date)}
-                          style={{
-                            background: 'none', border: `1px solid ${C.outline}`, cursor: isDeleting ? 'wait' : 'pointer',
-                            color: isDeleting ? C.red : C.textMuted, padding: '7px', borderRadius: '10px',
-                            display: 'flex', alignItems: 'center', transition: 'all 0.15s',
-                          }}
-                        >
-                          <Trash2 size={14} />
-                        </motion.button>
+                        {!isLocked && (
+                          <button
+                            onClick={() => handleDelete(expense.id, Number(expense.amount_in_budget_currency), expense.expense_date)}
+                            disabled={isDeleting}
+                            style={{
+                              background: 'transparent', border: 'none', cursor: 'pointer', padding: '6px', borderRadius: '8px',
+                              color: isDeleting ? C.outline : C.textMuted,
+                              transition: 'all 0.2s'
+                            }}
+                            onMouseOver={e => e.currentTarget.style.color = C.red}
+                            onMouseOut={e => e.currentTarget.style.color = isDeleting ? C.outline : C.textMuted}
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        )}
                       </div>
                     </motion.div>
                   );

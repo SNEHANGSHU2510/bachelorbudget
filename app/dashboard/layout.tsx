@@ -1,13 +1,14 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { format } from 'date-fns';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useQuery } from '@tanstack/react-query';
 import { useAppStore } from '@/lib/store';
 import { createBrowserClient } from '@supabase/ssr';
+import { differenceInDays, format } from 'date-fns';
 import { useRouter, usePathname } from 'next/navigation';
 import { Home, PieChart, History, Plus, LogOut, Wallet } from 'lucide-react';
 import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
 import { AddExpenseModal } from '@/components/expenses/AddExpenseModal';
 
 const NAV_ITEMS = [
@@ -34,6 +35,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const router   = useRouter();
   const pathname = usePathname();
 
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+
+  const { data: isLocked } = useQuery({
+    queryKey: ['budgetLock', activeBudget?.id],
+    queryFn: async () => {
+      if (!activeBudget) return false;
+      if (differenceInDays(new Date(activeBudget.end_date), new Date()) <= 0) return true;
+      const { data } = await supabase.from('expenses').select('amount_in_budget_currency').eq('budget_id', activeBudget.id);
+      const spent = (data || []).reduce((a, r) => a + Number(r.amount_in_budget_currency), 0);
+      return spent >= activeBudget.total_amount;
+    },
+    enabled: !!activeBudget,
+  });
+
   useEffect(() => {
     setMounted(true);
     const t = setInterval(() => setTime(new Date()), 1000);
@@ -45,10 +63,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     setIsSidebarOpen(false);
   }, [pathname]);
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -272,38 +287,40 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </main>
 
       {/* ── FAB ─────────────────────────────────────────────────────────────── */}
-      <div style={{ position: 'fixed', bottom: '32px', right: '32px', zIndex: 200 }}>
-        {/* Pulse ring */}
-        <motion.div
-          animate={{ scale: [1, 1.5, 1], opacity: [0.35, 0, 0.35] }}
-          transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
-          style={{
-            position: 'absolute', inset: 0, borderRadius: '50%',
-            border: '2px solid #8a2be2', pointerEvents: 'none',
-          }}
-        />
-        <motion.button
-          onClick={() => setIsModalOpen(true)}
-          onHoverStart={() => setFabHovered(true)}
-          onHoverEnd={() => setFabHovered(false)}
-          whileHover={{ scale: 1.1, boxShadow: '0 0 40px rgba(124,58,237,0.6)' }}
-          whileTap={{ scale: 0.92 }}
-          style={{
-            width: '64px', height: '64px', borderRadius: '50%', border: 'none',
-            background: 'linear-gradient(135deg, #8a2be2, #00fbfb)',
-            color: 'white', cursor: 'pointer', display: 'flex',
-            alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 0 32px rgba(138,43,226,0.5)',
-          }}
-        >
+      {!isLocked && (
+        <div style={{ position: 'fixed', bottom: '32px', right: '32px', zIndex: 200 }}>
+          {/* Pulse ring */}
           <motion.div
-            animate={{ rotate: fabHovered ? 135 : 0 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+            animate={{ scale: [1, 1.5, 1], opacity: [0.35, 0, 0.35] }}
+            transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+            style={{
+              position: 'absolute', inset: 0, borderRadius: '50%',
+              border: '2px solid #8a2be2', pointerEvents: 'none',
+            }}
+          />
+          <motion.button
+            onClick={() => setIsModalOpen(true)}
+            onHoverStart={() => setFabHovered(true)}
+            onHoverEnd={() => setFabHovered(false)}
+            whileHover={{ scale: 1.1, boxShadow: '0 0 40px rgba(124,58,237,0.6)' }}
+            whileTap={{ scale: 0.92 }}
+            style={{
+              width: '64px', height: '64px', borderRadius: '50%', border: 'none',
+              background: 'linear-gradient(135deg, #8a2be2, #00fbfb)',
+              color: 'white', cursor: 'pointer', display: 'flex',
+              alignItems: 'center', justifyContent: 'center',
+              boxShadow: '0 0 32px rgba(138,43,226,0.5)',
+            }}
           >
-            <Plus size={28} />
-          </motion.div>
-        </motion.button>
-      </div>
+            <motion.div
+              animate={{ rotate: fabHovered ? 135 : 0 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+            >
+              <Plus size={28} />
+            </motion.div>
+          </motion.button>
+        </div>
+      )}
 
       <AddExpenseModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
 
