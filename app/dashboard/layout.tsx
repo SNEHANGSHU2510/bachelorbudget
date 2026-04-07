@@ -11,9 +11,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { AddExpenseModal } from '@/components/expenses/AddExpenseModal';
 
 const NAV_ITEMS = [
-  { name: 'Dashboard',  href: '/dashboard',          icon: Home,    color: '#7c3aed' },
-  { name: 'Expenses',   href: '/dashboard/expenses', icon: History, color: '#06b6d4' },
-  { name: 'Statistics', href: '/dashboard/stats',    icon: PieChart,color: '#10b981' },
+  { name: 'Dashboard',  href: '/dashboard',          icon: Home,    color: '#8a2be2' },
+  { name: 'Expenses',   href: '/dashboard/expenses', icon: History, color: '#00fbfb' },
+  { name: 'Statistics', href: '/dashboard/stats',    icon: PieChart,color: '#ffb0ce' },
 ];
 
 const PAGE_TITLES: Record<string, string> = {
@@ -23,6 +23,7 @@ const PAGE_TITLES: Record<string, string> = {
 };
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const [mounted, setMounted]     = useState(false);
   const [time, setTime]           = useState(new Date());
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [fabHovered, setFabHovered]   = useState(false);
@@ -31,6 +32,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname = usePathname();
 
   useEffect(() => {
+    setMounted(true);
     const t = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(t);
   }, []);
@@ -48,7 +50,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const currentTitle = PAGE_TITLES[pathname] || 'Overview';
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#0a0a0f', color: '#f1f5f9', fontFamily: "'Inter', sans-serif" }}>
+    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#131318', color: '#e4e1e9', fontFamily: "var(--font-sans), sans-serif" }}>
 
       {/* ── SIDEBAR ─────────────────────────────────────────────────────────── */}
       <motion.aside
@@ -57,9 +59,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
         style={{
           width: '240px', flexShrink: 0,
-          borderRight: '1px solid rgba(255,255,255,0.06)',
-          background: 'rgba(13,13,20,0.95)',
-          backdropFilter: 'blur(20px)',
+          borderRight: '1px solid rgba(152,140,160,0.1)',
+          background: 'rgba(27, 27, 32, 0.65)',
+          backdropFilter: 'blur(30px)',
           padding: '24px 0', display: 'flex', flexDirection: 'column',
           position: 'sticky', top: 0, height: '100vh',
         }}
@@ -67,10 +69,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* Logo */}
         <div style={{ padding: '0 20px', marginBottom: '40px' }}>
           <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
-            <div style={{ width: '34px', height: '34px', borderRadius: '9px', background: 'linear-gradient(135deg, #7c3aed, #06b6d4)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <div style={{ width: '34px', height: '34px', borderRadius: '9px', background: 'linear-gradient(135deg, #8a2be2, #00fbfb)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 4px 16px rgba(138,43,226,0.3)' }}>
               <Wallet size={18} color="white" />
             </div>
-            <span style={{ fontWeight: 700, fontSize: '16px', background: 'linear-gradient(135deg, #a78bfa, #06b6d4)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            <span style={{ fontWeight: 700, fontSize: '18px', fontFamily: "var(--font-display)", background: 'linear-gradient(135deg, #dcb8ff, #00fbfb)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', letterSpacing: '-0.02em' }}>
               BachelorBudget
             </span>
           </Link>
@@ -94,9 +96,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     display: 'flex', alignItems: 'center', gap: '12px',
                     padding: '11px 14px', borderRadius: '12px', cursor: 'pointer',
                     position: 'relative', overflow: 'hidden',
-                    backgroundColor: isActive ? 'rgba(124,58,237,0.12)' : 'transparent',
-                    border: isActive ? '1px solid rgba(124,58,237,0.2)' : '1px solid transparent',
-                    color: isActive ? item.color : '#64748b',
+                    backgroundColor: isActive ? 'rgba(138,43,226,0.12)' : 'transparent',
+                    border: isActive ? '1px solid rgba(138,43,226,0.2)' : '1px solid transparent',
+                    color: isActive ? item.color : '#cfc2d7',
                     fontWeight: isActive ? 600 : 400, fontSize: '15px',
                     transition: 'color 0.2s, background 0.2s',
                   }}
@@ -119,10 +121,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* Budget name chip */}
         {activeBudget && (
           <div style={{ padding: '0 12px', marginBottom: '8px' }}>
-            <div style={{ padding: '10px 14px', borderRadius: '10px', background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.15)' }}>
-              <div style={{ fontSize: '11px', color: '#475569', marginBottom: '3px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Active Budget</div>
-              <div style={{ fontSize: '14px', fontWeight: 600, color: '#a78bfa', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{activeBudget.name}</div>
-              <div style={{ fontSize: '12px', color: '#475569', marginTop: '2px' }}>
+            <div style={{ padding: '10px 14px', borderRadius: '10px', background: 'rgba(138,43,226,0.08)', border: '1px solid rgba(138,43,226,0.15)' }}>
+              <div style={{ fontSize: '11px', color: '#988ca0', marginBottom: '3px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Active Budget</div>
+              <div style={{ fontSize: '14px', fontWeight: 600, color: '#dcb8ff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{activeBudget.name}</div>
+              <div style={{ fontSize: '12px', color: '#cfc2d7', marginTop: '2px' }}>
                 {activeBudget.currency}{activeBudget.total_amount.toLocaleString()}
               </div>
             </div>
@@ -138,11 +140,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             style={{
               width: '100%', display: 'flex', alignItems: 'center', gap: '12px',
               padding: '11px 14px', borderRadius: '12px', border: 'none',
-              background: 'transparent', color: '#475569', fontWeight: 500,
+              background: 'transparent', color: '#cfc2d7', fontWeight: 500,
               fontSize: '15px', cursor: 'pointer', transition: 'color 0.2s',
             }}
             onMouseEnter={e => (e.currentTarget.style.color = '#ef4444')}
-            onMouseLeave={e => (e.currentTarget.style.color = '#475569')}
+            onMouseLeave={e => (e.currentTarget.style.color = '#cfc2d7')}
           >
             <LogOut size={18} />
             Sign Out
@@ -159,10 +161,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
           style={{
-            height: '72px', borderBottom: '1px solid rgba(255,255,255,0.06)',
+            height: '72px', borderBottom: '1px solid rgba(152,140,160,0.1)',
             padding: '0 32px', display: 'flex', alignItems: 'center',
             justifyContent: 'space-between',
-            background: 'rgba(10,10,15,0.8)', backdropFilter: 'blur(16px)',
+            background: 'rgba(19,19,24,0.6)', backdropFilter: 'blur(30px)',
             position: 'sticky', top: 0, zIndex: 50,
           }}
         >
@@ -173,7 +175,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.25 }}
-              style={{ fontSize: '18px', fontWeight: 700, margin: 0 }}
+              style={{ fontSize: '20px', fontWeight: 700, margin: 0, fontFamily: "var(--font-display)", letterSpacing: '-0.02em', color: '#e4e1e9' }}
             >
               {currentTitle}
             </motion.h2>
@@ -181,16 +183,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: '15px', fontWeight: 600, fontFamily: 'monospace', color: '#f1f5f9', letterSpacing: '0.02em' }}>
-                {format(time, 'h:mm:ss a')}
+              <div style={{ fontSize: '15px', fontWeight: 600, fontFamily: 'var(--font-mono)', color: '#cfc2d7', letterSpacing: '0.02em' }}>
+                {mounted ? format(time, 'h:mm:ss a') : '00:00:00 AM'}
               </div>
-              <div style={{ fontSize: '12px', color: '#475569' }}>{format(time, 'EEEE, MMM d')}</div>
+              <div style={{ fontSize: '12px', color: '#988ca0' }}>{mounted ? format(time, 'EEEE, MMM d') : 'Loading...'}</div>
             </div>
             {activeBudget && (
               <div style={{
                 padding: '6px 14px', borderRadius: '100px',
-                background: 'rgba(6,182,212,0.1)', border: '1px solid rgba(6,182,212,0.25)',
-                fontSize: '13px', fontWeight: 700, color: '#06b6d4', letterSpacing: '0.03em',
+                background: 'linear-gradient(135deg, rgba(138,43,226,0.15), rgba(0,251,251,0.1))', border: '1px solid rgba(0,251,251,0.25)',
+                fontSize: '13px', fontWeight: 700, color: '#00fbfb', letterSpacing: '0.03em',
               }}>
                 {activeBudget.currency}
               </div>
@@ -206,7 +208,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-            style={{ flex: 1, padding: '32px', overflowY: 'auto' }}
+            style={{ flex: 1, overflowY: 'auto' }}
           >
             {children}
           </motion.div>
@@ -221,7 +223,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
           style={{
             position: 'absolute', inset: 0, borderRadius: '50%',
-            border: '2px solid #7c3aed', pointerEvents: 'none',
+            border: '2px solid #8a2be2', pointerEvents: 'none',
           }}
         />
         <motion.button
@@ -232,10 +234,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           whileTap={{ scale: 0.92 }}
           style={{
             width: '64px', height: '64px', borderRadius: '50%', border: 'none',
-            background: 'linear-gradient(135deg, #7c3aed, #06b6d4)',
+            background: 'linear-gradient(135deg, #8a2be2, #00fbfb)',
             color: 'white', cursor: 'pointer', display: 'flex',
             alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 0 28px rgba(124,58,237,0.45)',
+            boxShadow: '0 0 32px rgba(138,43,226,0.5)',
           }}
         >
           <motion.div
