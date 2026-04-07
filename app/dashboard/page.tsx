@@ -130,7 +130,7 @@ export default function DashboardPage() {
   const todayStr       = localDate(today);
   const diffDaysZeroIdx = activeBudget ? differenceInDays(new Date(activeBudget.end_date), today) : 0;
   const daysLeft       = activeBudget ? Math.max(1, diffDaysZeroIdx + 1) : 0;
-  const isBudgetLocked = activeBudget ? (remaining <= 0 || diffDaysZeroIdx <= 0) : false;
+  const isBudgetLocked = activeBudget ? (remaining <= 0 || diffDaysZeroIdx < 0) : false;
 
   const baseDailyBudget = activeBudget ? activeBudget.total_amount / (activeBudget.duration_days || 1) : 0;
   const dynamicDaily    = activeBudget ? Math.max(0, remaining) / Math.max(1, daysLeft) : 0;

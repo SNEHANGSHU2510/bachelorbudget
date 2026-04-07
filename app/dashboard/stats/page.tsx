@@ -105,7 +105,7 @@ export default function StatsPage() {
     { label: 'Avg / Day', sub: `over ${dateEntries.length} days`, val: `${activeBudget.currency}${avgDay.toFixed(0)}`, icon: TrendingUp, color: C.pink, glow: 'rgba(255,176,206,0.15)', grad: C.pinkDim },
   ];
 
-  const isBudgetCompleted = activeBudget ? differenceInDays(new Date(activeBudget.end_date), new Date()) <= 0 : false;
+  const isBudgetCompleted = activeBudget ? differenceInDays(new Date(activeBudget.end_date), new Date()) < 0 : false;
 
   return (
     <div id="report-capture-zone" style={{ display: 'flex', flexDirection: 'column', gap: '24px', padding: '24px 16px', background: C.bg }} className="stats-content">

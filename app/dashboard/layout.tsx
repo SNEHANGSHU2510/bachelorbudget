@@ -44,7 +44,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     queryKey: ['budgetLock', activeBudget?.id],
     queryFn: async () => {
       if (!activeBudget) return false;
-      if (differenceInDays(new Date(activeBudget.end_date), new Date()) <= 0) return true;
+      if (differenceInDays(new Date(activeBudget.end_date), new Date()) < 0) return true;
       const { data } = await supabase.from('expenses').select('amount_in_budget_currency').eq('budget_id', activeBudget.id);
       const spent = (data || []).reduce((a, r) => a + Number(r.amount_in_budget_currency), 0);
       return spent >= activeBudget.total_amount;
