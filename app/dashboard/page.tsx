@@ -161,10 +161,10 @@ export default function DashboardPage() {
   );
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', padding: '28px 32px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', padding: '24px 20px' }} className="dashboard-content">
 
       {/* ── Ambient top glow ─────────────────────────────────────────────────── */}
-      <div style={{ position: 'fixed', top: 0, left: '240px', right: 0, height: '1px', background: `linear-gradient(90deg, transparent, ${C.primary}, ${C.cyan}, transparent)`, zIndex: 10, opacity: 0.5, pointerEvents: 'none' }} />
+      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, height: '1px', background: `linear-gradient(90deg, transparent, ${C.primary}, ${C.cyan}, transparent)`, zIndex: 10, opacity: 0.5, pointerEvents: 'none' }} />
 
       {/* ── Budget switcher ─────────────────────────────────────────────────── */}
       {budgets && budgets.length > 1 && (
@@ -184,7 +184,7 @@ export default function DashboardPage() {
       )}
 
       {/* ── Stat cards ──────────────────────────────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px' }}>
         {cards.map((card, i) => {
           const Icon = card.icon;
           return (
@@ -200,6 +200,7 @@ export default function DashboardPage() {
                 backdropFilter: 'blur(20px)',
                 position: 'relative', overflow: 'hidden', cursor: 'default',
               }}
+              className="stat-card"
             >
               {/* corner glow */}
               <div style={{ position: 'absolute', top: '-40px', right: '-40px', width: '120px', height: '120px', borderRadius: '50%', background: card.glow, filter: 'blur(30px)', pointerEvents: 'none' }} />
@@ -262,9 +263,10 @@ export default function DashboardPage() {
           padding: '28px', borderRadius: '24px',
           background: `linear-gradient(135deg, rgba(138,43,226,0.1) 0%, rgba(0,251,251,0.05) 50%, rgba(31,31,37,0.8) 100%)`,
           border: `1px solid ${C.primaryBorder}`,
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '24px',
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '32px',
           position: 'relative', overflow: 'hidden',
         }}
+        className="reserve-panel"
       >
         {/* Background glow orbs */}
         <div style={{ position: 'absolute', top: '-60px', left: '-20px', width: '200px', height: '200px', borderRadius: '50%', background: C.primaryGlow, filter: 'blur(60px)', pointerEvents: 'none' }} />
@@ -318,7 +320,7 @@ export default function DashboardPage() {
       </motion.div>
 
       {/* ── Charts ──────────────────────────────────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '20px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
         <motion.div
           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.48 }}
@@ -346,6 +348,16 @@ export default function DashboardPage() {
       </div>
 
       <CreateBudgetModal isOpen={isBudgetModalOpen} onClose={() => setIsBudgetModalOpen(false)} onCreated={handleBudgetCreated} />
+
+      <style>{`
+        @media (max-width: 768px) {
+          .dashboard-content { padding: 16px 16px !important; }
+          .reserve-panel { flex-direction: column; align-items: flex-start !important; gap: 24px; }
+          .reserve-panel div:nth-child(3) { text-align: left !important; }
+          .stat-card { padding: 20px !important; }
+          .stat-card div:nth-child(2) { font-size: 26px !important; }
+        }
+      `}</style>
     </div>
   );
 }

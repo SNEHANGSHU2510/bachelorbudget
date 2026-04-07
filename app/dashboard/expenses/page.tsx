@@ -97,10 +97,10 @@ export default function ExpensesPage() {
   const totalFiltered = filtered.reduce((s, e) => s + Number(e.amount_in_budget_currency), 0);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', padding: '28px 32px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', padding: '24px 16px' }} className="expenses-content">
 
       {/* Ambient top glow */}
-      <div style={{ position: 'fixed', top: 0, left: '240px', right: 0, height: '1px', background: `linear-gradient(90deg, transparent, ${C.primary}, ${C.cyan}, transparent)`, zIndex: 10, opacity: 0.5, pointerEvents: 'none' }} />
+      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, height: '1px', background: `linear-gradient(90deg, transparent, ${C.primary}, ${C.cyan}, transparent)`, zIndex: 10, opacity: 0.5, pointerEvents: 'none' }} />
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <motion.div initial={{ opacity: 0, y: -14 }} animate={{ opacity: 1, y: 0 }} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
@@ -155,14 +155,14 @@ export default function ExpensesPage() {
               transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
               style={{ overflow: 'hidden' }}
             >
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', padding: '4px 0' }}>
+              <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', padding: '8px 0', whiteSpace: 'nowrap' }} className="no-scrollbar">
                 {['all', ...Object.keys(CATEGORY_META)].map(cat => {
                   const meta = CATEGORY_META[cat];
                   const active = catFilter === cat;
                   return (
                     <motion.button key={cat} whileTap={{ scale: 0.95 }} whileHover={{ scale: 1.03 }} onClick={() => setCat(cat)}
                       style={{
-                        padding: '7px 14px', borderRadius: '100px', fontSize: '12px', fontWeight: 600, cursor: 'pointer',
+                        padding: '7px 14px', borderRadius: '100px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', flexShrink: 0,
                         border: `1px solid ${active ? (meta?.color || C.primary) + '60' : C.outline}`,
                         background: active ? `${meta?.color || C.primary}18` : 'transparent',
                         color: active ? (meta?.color || '#dcb8ff') : C.textMuted,
@@ -303,6 +303,15 @@ export default function ExpensesPage() {
           })}
         </AnimatePresence>
       )}
+
+      <style>{`
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        @media (max-width: 768px) {
+          .expenses-content { padding: 16px 12px !important; }
+        }
+      `}</style>
     </div>
   );
 }

@@ -25,6 +25,7 @@ const PAGE_TITLES: Record<string, string> = {
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted]     = useState(false);
   const [time, setTime]           = useState(new Date());
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [fabHovered, setFabHovered]   = useState(false);
   const activeBudget = useAppStore(s => s.activeBudget);
@@ -36,6 +37,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     const t = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(t);
   }, []);
+
+  // Close sidebar on route change (mobile)
+  useEffect(() => {
+    setIsSidebarOpen(false);
+  }, [pathname]);
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -52,19 +58,43 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#131318', color: '#e4e1e9', fontFamily: "var(--font-sans), sans-serif" }}>
 
-      {/* ── SIDEBAR ─────────────────────────────────────────────────────────── */}
+      {/* ── SIDEBAR BACKDROP (Mobile) ────────────────────────────────────────── */}
+      <AnimatePresence>
+        {isSidebarOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsSidebarOpen(false)}
+            style={{
+              position: 'fixed', inset: 0,
+              background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)',
+              zIndex: 100, cursor: 'pointer',
+            }}
+            className="md:hidden"
+          />
+        )}
+      </AnimatePresence>
+
+      {/* ── SIDEBAR / DRAWER ─────────────────────────────────────────────────── */}
       <motion.aside
-        initial={{ x: -240, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+        initial={false}
+        animate={{
+          x: (typeof window !== 'undefined' && window.innerWidth < 768)
+            ? (isSidebarOpen ? 0 : -280)
+            : 0,
+          opacity: 1
+        }}
+        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
         style={{
           width: '240px', flexShrink: 0,
           borderRight: '1px solid rgba(152,140,160,0.1)',
-          background: 'rgba(27, 27, 32, 0.65)',
+          background: 'rgba(27, 27, 32, 0.95)',
           backdropFilter: 'blur(30px)',
           padding: '24px 0', display: 'flex', flexDirection: 'column',
-          position: 'sticky', top: 0, height: '100vh',
+          position: 'fixed', top: 0, bottom: 0, zIndex: 110,
         }}
+        className="sidebar-container"
       >
         {/* Logo */}
         <div style={{ padding: '0 20px', marginBottom: '40px' }}>
@@ -168,18 +198,36 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             position: 'sticky', top: 0, zIndex: 50,
           }}
         >
-          <AnimatePresence mode="wait">
-            <motion.h2
-              key={currentTitle}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.25 }}
-              style={{ fontSize: '20px', fontWeight: 700, margin: 0, fontFamily: "var(--font-display)", letterSpacing: '-0.02em', color: '#e4e1e9' }}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <button
+              onClick={() => setIsSidebarOpen(true)}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                width: '40px', height: '40px', borderRadius: '10px',
+                border: '1px solid rgba(152,140,160,0.2)', background: 'rgba(255,255,255,0.05)',
+                color: '#e4e1e9', cursor: 'pointer', outline: 'none'
+              }}
+              className="md:hidden"
             >
-              {currentTitle}
-            </motion.h2>
-          </AnimatePresence>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '20px' }}>
+                <div style={{ height: '2px', background: 'currentColor', borderRadius: '2px' }} />
+                <div style={{ height: '2px', background: 'currentColor', borderRadius: '2px', width: '70%' }} />
+                <div style={{ height: '2px', background: 'currentColor', borderRadius: '2px' }} />
+              </div>
+            </button>
+            <AnimatePresence mode="wait">
+              <motion.h2
+                key={currentTitle}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.25 }}
+                style={{ fontSize: '20px', fontWeight: 700, margin: 0, fontFamily: "var(--font-display)", letterSpacing: '-0.02em', color: '#e4e1e9' }}
+              >
+                {currentTitle}
+              </motion.h2>
+            </AnimatePresence>
+          </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <div style={{ textAlign: 'right' }}>
@@ -250,6 +298,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </div>
 
       <AddExpenseModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+
+      <style>{`
+        @media (min-width: 768px) {
+          .sidebar-container { 
+            position: sticky !important; 
+            height: 100vh !important;
+            transform: none !important;
+            opacity: 1 !important;
+          }
+          .md\\:hidden { display: none !important; }
+          main { padding-left: 0; }
+        }
+        @media (max-width: 767px) {
+          main { padding-left: 0 !important; }
+          header { padding: 0 16px !important; }
+          .sidebar-container { box-shadow: 20px 0 50px rgba(0,0,0,0.5); }
+        }
+      `}</style>
     </div>
   );
 }

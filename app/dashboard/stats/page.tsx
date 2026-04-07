@@ -96,10 +96,10 @@ export default function StatsPage() {
   ];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', padding: '28px 32px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', padding: '24px 16px' }} className="stats-content">
 
       {/* Ambient top glow */}
-      <div style={{ position: 'fixed', top: 0, left: '240px', right: 0, height: '1px', background: `linear-gradient(90deg, transparent, ${C.primary}, ${C.cyan}, transparent)`, zIndex: 10, opacity: 0.5, pointerEvents: 'none' }} />
+      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, height: '1px', background: `linear-gradient(90deg, transparent, ${C.primary}, ${C.cyan}, transparent)`, zIndex: 10, opacity: 0.5, pointerEvents: 'none' }} />
 
       {/* ── Heading ─────────────────────────────────────────────────────────── */}
       <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }}>
@@ -109,7 +109,7 @@ export default function StatsPage() {
 
       {/* ── 3 insight cards ─────────────────────────────────────────────────── */}
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.06 }}
-        style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px' }}>
+        style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px' }}>
         {insightCards.map((c, i) => {
           const Icon = c.icon;
           return (
@@ -136,7 +136,7 @@ export default function StatsPage() {
       </motion.div>
 
       {/* ── Main 2-col layout ───────────────────────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 400px', gap: '20px', alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px', alignItems: 'start' }} className="stats-main-grid">
 
         {/* ── Category breakdown ─────────────────────────────────────────────── */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}
@@ -317,6 +317,15 @@ export default function StatsPage() {
           </div>
         </motion.div>
       </div>
+
+      <style>{`
+        @media (max-width: 768px) {
+          .stats-content { padding: 16px 12px !important; }
+        }
+        @media (min-width: 1024px) {
+          .stats-main-grid { grid-template-columns: 1fr 400px !important; }
+        }
+      `}</style>
     </div>
   );
 }
