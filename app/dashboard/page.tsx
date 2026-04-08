@@ -135,14 +135,23 @@ export default function DashboardPage() {
   const baseDailyBudget = activeBudget ? activeBudget.total_amount / (activeBudget.duration_days || 1) : 0;
   const dynamicDaily    = activeBudget ? Math.max(0, remaining) / Math.max(1, daysLeft) : 0;
   
-  // Adopt dynamic calculation ONLY when the total remaining budget drops below the base daily allowance
-  const isAusterityMode = remaining < baseDailyBudget;
+  // Adopt dynamic calculation (rationing) when the current "fair share" drops below the original planned daily budget
+  const isAusterityMode = activeBudget ? (dynamicDaily < baseDailyBudget - 0.01) : false;
   const dailyBudget     = isAusterityMode ? dynamicDaily : baseDailyBudget;
 
   const carryForward    = reserveData?.reserve ?? 0;
   // During strict austerity rationing, prior theoretical "reserves" are bypassed 
   // and the effective budget locks exactly to the mathematically reduced daily limit.
-  const effectiveDaily  = isAusterityMode ? dailyBudget : dailyBudget + carryForward;
+  // We clamp effectiveDaily to 0 minimum to prevent negative display.
+  const effectiveDaily  = Math.max(0, isAusterityMode ? dailyBudget : dailyBudget + carryForward);
+  
+  // For the "Today's Usage" UI, we want a stable limit that doesn't move as we spend today.
+  // In austerity, we use the fair-share calculated as if we hadn't spent anything today yet.
+  const safeTodaySpent = todaySpentData || 0;
+  const todayLimit      = isAusterityMode 
+    ? (Math.max(0, remaining + safeTodaySpent) / Math.max(1, daysLeft)) 
+    : effectiveDaily;
+
   const spentPct        = activeBudget ? Math.min((totalSpent / activeBudget.total_amount) * 100, 100) : 0;
   
   const cards           = activeBudget ? STAT_CARDS(activeBudget.total_amount, totalSpent, remaining, dailyBudget) : [];
@@ -327,7 +336,7 @@ export default function DashboardPage() {
           {reserveData ? (
             <div style={{ display: 'flex', gap: '32px', flexWrap: 'wrap' }}>
               {[
-                { label: 'Base Daily', sub: 'Standard allocation', val: `${activeBudget?.currency}${dailyBudget.toFixed(0)}`, color: C.textDim },
+                { label: 'Planned Base', sub: 'Original target', val: `${activeBudget?.currency}${baseDailyBudget.toFixed(0)}`, color: C.textDim },
                 { label: "Yesterday's Spend", sub: reserveData.date, val: `-${activeBudget?.currency}${reserveData.spent.toFixed(0)}`, color: C.red },
                 { label: 'Carry-Forward', sub: 'Unspent carries over', val: `${carryForward >= 0 ? '+' : ''}${activeBudget?.currency}${carryForward.toFixed(0)}`, color: carryForward >= 0 ? C.cyan : C.red },
               ].map(item => (
@@ -376,33 +385,33 @@ export default function DashboardPage() {
               <span style={{ fontWeight: 700, fontSize: '15px', color: C.text, fontFamily: 'var(--font-display)' }}>Today&apos;s Usage</span>
               <span style={{ fontSize: '12px', color: C.textMuted, marginLeft: '8px' }}>{new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}</span>
             </div>
-            {todaySpentData !== undefined && effectiveDaily > 0 && (
+            {todaySpentData !== undefined && todayLimit > 0 && (
               <span style={{
                 fontSize: '15px', fontWeight: 700, fontFamily: 'var(--font-mono)',
-                color: (todaySpentData / effectiveDaily) > 0.9 ? C.red : (todaySpentData / effectiveDaily) > 0.6 ? '#fbbf24' : C.cyan
+                color: (todaySpentData / todayLimit) > 0.9 ? C.red : (todaySpentData / todayLimit) > 0.6 ? '#fbbf24' : C.cyan
               }}>
-                {((todaySpentData / effectiveDaily) * 100 || 0).toFixed(1)}%
+                {Math.min(999, (todaySpentData / todayLimit) * 100 || 0).toFixed(1)}%
               </span>
             )}
           </div>
           
-          {todaySpentData !== undefined && effectiveDaily >= 0 && (
+          {todaySpentData !== undefined && todayLimit >= 0 && (
             <>
               <div style={{ height: '14px', borderRadius: '100px', background: 'rgba(255,255,255,0.05)', overflow: 'hidden', position: 'relative' }}>
                 <motion.div
-                  initial={{ width: 0 }} animate={{ width: `${Math.min(100, (todaySpentData / (effectiveDaily || 1)) * 100)}%` }}
+                  initial={{ width: 0 }} animate={{ width: `${Math.min(100, (todaySpentData / (todayLimit || 1)) * 100)}%` }}
                   transition={{ duration: 1.2, ease: "easeOut", delay: 0.5 }}
                   style={{
                     height: '100%', borderRadius: '100px',
-                    background: (todaySpentData / (effectiveDaily || 1)) > 0.9 ? 'linear-gradient(90deg, #ff6b8a, #ff4d6d)' : (todaySpentData / (effectiveDaily || 1)) > 0.6 ? 'linear-gradient(90deg, #fbbf24, #f59e0b)' : `linear-gradient(90deg, ${C.cyan}, ${C.primary})`,
-                    boxShadow: (todaySpentData / (effectiveDaily || 1)) > 0.9 ? '0 0 12px rgba(255,107,138,0.5)' : `0 0 12px ${C.cyanGlow}`,
+                    background: (todaySpentData / (todayLimit || 1)) > 0.9 ? 'linear-gradient(90deg, #ff6b8a, #ff4d6d)' : (todaySpentData / (todayLimit || 1)) > 0.6 ? 'linear-gradient(90deg, #fbbf24, #f59e0b)' : `linear-gradient(90deg, ${C.cyan}, ${C.primary})`,
+                    boxShadow: (todaySpentData / (todayLimit || 1)) > 0.9 ? '0 0 12px rgba(255,107,138,0.5)' : `0 0 12px ${C.cyanGlow}`,
                   }}
                 />
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '12px', fontSize: '13px', color: C.textMuted }}>
                 <span style={{ fontFamily: 'var(--font-mono)' }}>{activeBudget.currency}{(todaySpentData).toFixed(0)} spent</span>
-                <span style={{ fontFamily: 'var(--font-mono)', color: C.text }}>{activeBudget.currency}{Math.max(0, effectiveDaily - todaySpentData).toFixed(0)} remaining</span>
-                <span style={{ fontFamily: 'var(--font-mono)' }}>{activeBudget.currency}{(effectiveDaily).toFixed(0)} limit</span>
+                <span style={{ fontFamily: 'var(--font-mono)', color: C.text }}>{activeBudget.currency}{Math.max(0, todayLimit - todaySpentData).toFixed(0)} remaining</span>
+                <span style={{ fontFamily: 'var(--font-mono)' }}>{activeBudget.currency}{(todayLimit).toFixed(0)} limit</span>
               </div>
             </>
           )}
