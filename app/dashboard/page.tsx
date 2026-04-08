@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createBrowserClient } from '@supabase/ssr';
 import { useAppStore } from '@/lib/store';
-import { differenceInDays } from 'date-fns';
+import { differenceInCalendarDays } from 'date-fns';
 import { Wallet, TrendingDown, Target, Clock, Activity, Plus, RefreshCw, Zap, Layers } from 'lucide-react';
 import CountUp from 'react-countup';
 import { TrendChart, CategoryPieChart } from '@/components/charts/DashboardCharts';
@@ -128,7 +128,7 @@ export default function DashboardPage() {
   
   const today          = new Date();
   const todayStr       = localDate(today);
-  const diffDaysZeroIdx = activeBudget ? differenceInDays(new Date(activeBudget.end_date), today) : 0;
+  const diffDaysZeroIdx = activeBudget ? differenceInCalendarDays(new Date(activeBudget.end_date), today) : 0;
   const daysLeft       = activeBudget ? Math.max(1, diffDaysZeroIdx + 1) : 0;
   const isBudgetLocked = activeBudget ? (remaining <= 0 || diffDaysZeroIdx < 0) : false;
 
@@ -327,7 +327,7 @@ export default function DashboardPage() {
           {reserveData ? (
             <div style={{ display: 'flex', gap: '32px', flexWrap: 'wrap' }}>
               {[
-                { label: 'Base Daily', sub: 'Standard allocation', val: `${activeBudget?.currency}${dailyBudget.toFixed(0)}`, color: C.textDim },
+                { label: 'Base Daily', sub: 'Standard allocation', val: `${activeBudget?.currency}${baseDailyBudget.toFixed(0)}`, color: C.textDim },
                 { label: "Yesterday's Spend", sub: reserveData.date, val: `-${activeBudget?.currency}${reserveData.spent.toFixed(0)}`, color: C.red },
                 { label: 'Carry-Forward', sub: 'Unspent carries over', val: `${carryForward >= 0 ? '+' : ''}${activeBudget?.currency}${carryForward.toFixed(0)}`, color: carryForward >= 0 ? C.cyan : C.red },
               ].map(item => (
@@ -348,11 +348,17 @@ export default function DashboardPage() {
         <div style={{ textAlign: 'right', position: 'relative' }}>
           <div style={{ fontSize: '11px', color: C.textMuted, marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Today&apos;s Effective Budget</div>
           <div style={{ fontSize: '12px', color: C.textMuted, marginBottom: '8px', fontFamily: 'var(--font-mono)' }}>
-            {activeBudget?.currency}{dailyBudget.toFixed(0)}
-            {carryForward !== 0 && !isAusterityMode && (
-              <span style={{ color: carryForward > 0 ? C.cyan : C.red, marginLeft: '4px' }}>
-                {carryForward > 0 ? `+${activeBudget?.currency}${carryForward.toFixed(0)}` : `-${activeBudget?.currency}${Math.abs(carryForward).toFixed(0)}`}
-              </span>
+            {isAusterityMode ? (
+              <span style={{ color: C.textDim }}>{activeBudget?.currency}{remaining.toFixed(0)} ÷ {daysLeft} days {daysLeft > 1 ? 'remaining' : 'left'}</span>
+            ) : (
+              <>
+                {activeBudget?.currency}{dailyBudget.toFixed(0)}
+                {carryForward !== 0 && (
+                  <span style={{ color: carryForward > 0 ? C.cyan : C.red, marginLeft: '4px' }}>
+                    {carryForward > 0 ? `+${activeBudget?.currency}${carryForward.toFixed(0)}` : `-${activeBudget?.currency}${Math.abs(carryForward).toFixed(0)}`}
+                  </span>
+                )}
+              </>
             )}
             {isAusterityMode && (
               <span style={{ color: C.red, marginLeft: '6px', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>(Strict Mode)</span>

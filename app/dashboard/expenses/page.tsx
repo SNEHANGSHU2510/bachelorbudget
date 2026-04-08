@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createBrowserClient } from '@supabase/ssr';
 import { useAppStore } from '@/lib/store';
-import { format, parseISO, differenceInDays } from 'date-fns';
+import { format, parseISO, differenceInCalendarDays } from 'date-fns';
 import { Search, Trash2, Calendar, TrendingDown, Receipt, SlidersHorizontal } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -48,7 +48,7 @@ export default function ExpensesPage() {
     queryKey: ['budgetLock', activeBudget?.id],
     queryFn: async () => {
       if (!activeBudget) return false;
-      if (differenceInDays(new Date(activeBudget.end_date), new Date()) < 0) return true;
+      if (differenceInCalendarDays(new Date(activeBudget.end_date), new Date()) < 0) return true;
       const { data } = await supabase.from('expenses').select('amount_in_budget_currency').eq('budget_id', activeBudget.id);
       const spent = (data || []).reduce((a, r) => a + Number(r.amount_in_budget_currency), 0);
       return spent >= activeBudget.total_amount;
