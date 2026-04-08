@@ -45,6 +45,7 @@ const KNOWLEDGE_BASE = [
   }
 ];
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let extractor: any = null;
 
 async function getExtractor() {
