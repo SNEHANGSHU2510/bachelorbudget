@@ -122,7 +122,11 @@ export default function StatsPage() {
         
         {isBudgetCompleted && (
           <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.2 }}>
-            <ExportInvoiceButton />
+            <ExportInvoiceButton 
+              budget={activeBudget}
+              expenses={expenses}
+              totalSpent={totalSpent}
+            />
           </motion.div>
         )}
       </div>
