@@ -84,13 +84,21 @@ export default function StatsPage() {
     if (!activeBudget) return;
     setAiLoading(true);
     setAiResponse('');
-    const msg = customMsg || `My budget is ${activeBudget.currency}${activeBudget.total_amount} for ${activeBudget.duration_days} days. I've spent ${activeBudget.currency}${totalSpent.toFixed(0)} so far. Top categories: ${sortedCats.slice(0, 3).map(([c, v]) => `${c} (${activeBudget.currency}${v.toFixed(0)})`).join(', ')}. Give me 3 actionable tips to stay on budget.`;
+    
+    // We import dynamically to avoid SSR issues with Transformers.js
+    const { getLocalAdvice } = await import('@/lib/ai/local-brain');
+    
+    const msg = customMsg || `My budget is ${activeBudget.currency}${activeBudget.total_amount}. I spent ${activeBudget.currency}${totalSpent.toFixed(0)}. Fix my budget.`;
+    
     try {
-      const res = await fetch('/api/ai/advice', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: msg, budgetContext: { total: activeBudget.total_amount, spent: totalSpent, currency: activeBudget.currency, categories: catBreakdown } }) });
-      const data = await res.json();
-      setAiResponse(data.advice || data.message || data.error || 'No response received.');
-    } catch { toast.error('AI request failed'); }
-    finally { setAiLoading(false); }
+      const advice = await getLocalAdvice(msg);
+      setAiResponse(advice);
+    } catch { 
+      toast.error('Local ML engine failed to initialize'); 
+      setAiResponse("The local brain is still warming up. Please try again in 5 seconds.");
+    } finally { 
+      setAiLoading(false); 
+    }
   };
 
   const recordTrainingData = async (rating: number) => {
@@ -105,7 +113,7 @@ export default function StatsPage() {
         ai_response: aiResponse,
         rating
       });
-      toast.success(rating > 0 ? 'Feedback saved! This will help train your model.' : 'Feedback recorded.');
+      toast.success(rating > 0 ? 'Feedback saved locally!' : 'Feedback recorded.');
     } catch {
       toast.error('Failed to log training data');
     }
@@ -135,7 +143,7 @@ export default function StatsPage() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
         <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }}>
           <h1 style={{ fontSize: '28px', fontWeight: 800, margin: 0, fontFamily: 'var(--font-display)', letterSpacing: '-0.03em', color: C.text }}>Statistics & Insights</h1>
-          <p style={{ color: C.textMuted, fontSize: '14px', margin: '6px 0 0' }}>Budget analysis and AI-powered recommendations</p>
+          <p style={{ color: C.textMuted, fontSize: '14px', margin: '6px 0 0' }}>Local ML analysis and private recommendations</p>
         </motion.div>
         
         {isBudgetCompleted && (
@@ -243,44 +251,44 @@ export default function StatsPage() {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }}
           style={{
             padding: '28px', borderRadius: '24px',
-            background: `linear-gradient(160deg, rgba(138,43,226,0.08) 0%, ${C.surface} 60%)`,
-            border: `1px solid ${C.primaryBorder}`,
+            background: `linear-gradient(160deg, rgba(0,251,251,0.05) 0%, ${C.surface} 60%)`,
+            border: `1px solid ${C.cyanBorder}`,
             display: 'flex', flexDirection: 'column', gap: '18px',
             position: 'relative', overflow: 'hidden',
           }}>
           {/* Background ambient glow */}
-          <div style={{ position: 'absolute', top: '-60px', right: '-40px', width: '200px', height: '200px', borderRadius: '50%', background: C.primaryGlow, filter: 'blur(60px)', pointerEvents: 'none' }} />
+          <div style={{ position: 'absolute', top: '-60px', right: '-40px', width: '200px', height: '200px', borderRadius: '50%', background: C.cyanGlow, filter: 'blur(60px)', pointerEvents: 'none' }} />
 
           {/* Title */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', position: 'relative' }}>
-            <div style={{ width: '38px', height: '38px', borderRadius: '12px', background: `linear-gradient(135deg, ${C.primary}, #5a00e0)`, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 4px 18px ${C.primaryGlow}`, flexShrink: 0 }}>
-              <Sparkles size={18} color="white" />
+            <div style={{ width: '38px', height: '38px', borderRadius: '12px', background: `linear-gradient(135deg, ${C.cyan}, #00a8a8)`, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 4px 18px ${C.cyanGlow}`, flexShrink: 0 }}>
+              <Sparkles size={18} color="black" />
             </div>
             <div>
-              <div style={{ fontWeight: 700, fontSize: '16px', color: C.text, fontFamily: 'var(--font-display)' }}>Gemini AI Advisor</div>
-              <div style={{ fontSize: '11px', color: C.textMuted }}>Powered by Google Gemini 2.0 Flash</div>
+              <div style={{ fontWeight: 700, fontSize: '16px', color: C.text, fontFamily: 'var(--font-display)' }}>Local ML Advisor</div>
+              <div style={{ fontSize: '11px', color: C.textMuted }}>Neural Brain running locally in your browser</div>
             </div>
           </div>
 
           {/* Quick trigger */}
           {!aiResponse && !aiLoading && (
             <motion.button
-              whileHover={{ scale: 1.02, boxShadow: `0 0 36px ${C.primaryGlow}` }}
+              whileHover={{ scale: 1.02, boxShadow: `0 0 36px ${C.cyanGlow}` }}
               whileTap={{ scale: 0.97 }}
               onClick={() => getAiAdvice()}
-              style={{ padding: '13px 18px', borderRadius: '14px', border: `1px solid ${C.primaryBorder}`, cursor: 'pointer', background: `linear-gradient(135deg, ${C.primary}, #5a00e0)`, color: 'white', fontWeight: 700, fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center', boxShadow: `0 0 24px ${C.primaryGlow}` }}
+              style={{ padding: '13px 18px', borderRadius: '14px', border: `1px solid ${C.cyanBorder}`, cursor: 'pointer', background: `linear-gradient(135deg, ${C.cyan}, #00cccc)`, color: '#000', fontWeight: 700, fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center', boxShadow: `0 0 24px ${C.cyanGlow}` }}
             >
-              <Sparkles size={15} /> Get AI Spending Advice
+              <Sparkles size={15} /> Analyze with Local ML
             </motion.button>
           )}
 
           {/* Quick question chips */}
           {!aiResponse && !aiLoading && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <div style={{ fontSize: '11px', color: C.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Quick Questions</div>
+              <div style={{ fontSize: '11px', color: C.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Semantic Queries</div>
               {QUICK_QUESTIONS.map((q, i) => (
                 <motion.button key={i}
-                  whileHover={{ x: 4, backgroundColor: C.primaryDim }}
+                  whileHover={{ x: 4, backgroundColor: C.cyanDim }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => { setAiMessage(q); getAiAdvice(q); }}
                   style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', padding: '10px 14px', borderRadius: '10px', border: `1px solid ${C.outline}`, background: 'transparent', color: C.textDim, cursor: 'pointer', fontSize: '13px', textAlign: 'left', transition: 'all 0.15s' }}
@@ -301,13 +309,13 @@ export default function StatsPage() {
                   <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}>
                     <RefreshCw size={12} />
                   </motion.div>
-                  Gemini is thinking...
+                  Activating Your Local Neural Brain...
                 </div>
                 {[1, 2, 3].map(i => (
                   <motion.div key={i}
                     animate={{ opacity: [0.3, 0.7, 0.3] }}
                     transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.2 }}
-                    style={{ height: '13px', borderRadius: '7px', background: C.primaryDim, width: i === 3 ? '60%' : '100%' }}
+                    style={{ height: '13px', borderRadius: '7px', background: C.cyanDim, width: i === 3 ? '60%' : '100%' }}
                   />
                 ))}
               </motion.div>
@@ -319,15 +327,22 @@ export default function StatsPage() {
             {aiResponse && !aiLoading && (
               <motion.div
                 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
-                style={{ padding: '18px', borderRadius: '14px', background: C.primaryDim, border: `1px solid ${C.primaryBorder}`, fontSize: '14px', color: C.textDim, lineHeight: 1.75, position: 'relative' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px', color: '#dcb8ff', fontWeight: 700, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                  <MessageCircle size={12} /> Gemini&apos;s Analysis
+                style={{ padding: '18px', borderRadius: '14px', background: C.cyanDim, border: `1px solid ${C.cyanBorder}`, fontSize: '14px', color: C.textDim, lineHeight: 1.75, position: 'relative' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px', color: C.cyan, fontWeight: 700, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  <MessageCircle size={12} /> Your ML Intelligence
                 </div>
                 <div style={{ whiteSpace: 'pre-wrap' }}>{aiResponse}</div>
-                <button onClick={() => { setAiResponse(''); setAiMessage(''); }}
-                  style={{ marginTop: '14px', background: 'none', border: 'none', color: C.textMuted, cursor: 'pointer', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  ↺ Clear & Ask Again
-                </button>
+                <div style={{ marginTop: '14px', display: 'flex', gap: '10px', borderTop: `1px solid ${C.cyanBorder}`, paddingTop: '12px' }}>
+                  <button onClick={() => { setAiResponse(''); setAiMessage(''); }}
+                    style={{ background: 'none', border: 'none', color: C.textMuted, cursor: 'pointer', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    ↺ Clear Brain
+                  </button>
+                  <div style={{ flex: 1 }} />
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    <button onClick={() => recordTrainingData(1)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px' }}>👍</button>
+                    <button onClick={() => recordTrainingData(-1)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px' }}>👎</button>
+                  </div>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
@@ -335,23 +350,23 @@ export default function StatsPage() {
           {/* Custom question input */}
           <div style={{ borderTop: `1px solid ${C.outline}`, paddingTop: '16px' }}>
             <div style={{ fontSize: '12px', color: C.textMuted, marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <MessageCircle size={12} /> Ask a custom question
+              <MessageCircle size={12} /> Ask your private model
             </div>
             <div style={{ display: 'flex', gap: '8px' }}>
               <input
-                placeholder="e.g. How can I save more on meals?"
+                placeholder="e.g. Biriyani spending advice"
                 value={aiMessage} onChange={e => setAiMessage(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && aiMessage.trim() && getAiAdvice(aiMessage)}
                 style={{ flex: 1, backgroundColor: C.surfaceHigh, border: `1px solid ${C.outline}`, borderRadius: '12px', padding: '11px 14px', fontSize: '13px', color: C.text, outline: 'none', fontFamily: 'inherit', transition: 'border-color 0.2s' }}
-                onFocus={e => (e.currentTarget.style.borderColor = C.primaryBorder)}
+                onFocus={e => (e.currentTarget.style.borderColor = C.cyanBorder)}
                 onBlur={e => (e.currentTarget.style.borderColor = C.outline)}
               />
               <motion.button
-                whileHover={{ scale: 1.08, boxShadow: `0 0 20px ${C.primaryGlow}` }}
+                whileHover={{ scale: 1.08, boxShadow: `0 0 20px ${C.cyanGlow}` }}
                 whileTap={{ scale: 0.93 }}
                 onClick={() => aiMessage.trim() && getAiAdvice(aiMessage)}
                 disabled={!aiMessage.trim() || aiLoading}
-                style={{ padding: '11px 14px', borderRadius: '12px', border: 'none', cursor: 'pointer', background: `linear-gradient(135deg, ${C.primary}, #5a00e0)`, color: 'white', display: 'flex', alignItems: 'center', opacity: !aiMessage.trim() || aiLoading ? 0.5 : 1 }}
+                style={{ padding: '11px 14px', borderRadius: '12px', border: 'none', cursor: 'pointer', background: `linear-gradient(135deg, ${C.cyan}, #00a8a8)`, color: '#000', display: 'flex', alignItems: 'center', opacity: !aiMessage.trim() || aiLoading ? 0.5 : 1 }}
               >
                 {aiLoading ? <RefreshCw size={16} className="spin" /> : <Send size={16} />}
               </motion.button>
