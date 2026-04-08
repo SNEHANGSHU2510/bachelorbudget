@@ -54,7 +54,7 @@ export const TrendChart = ({
 
       // Build chart data for each day up to today
       const start = new Date(budget.start_date);
-      const end = new Date(Math.min(new Date(budget.end_date).getTime(), new Date().getTime()));
+      const end = new Date(budget.end_date);
       const days = eachDayOfInterval({ start, end });
 
       return days.map(day => {

@@ -439,7 +439,7 @@ export default function DashboardPage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '22px' }}>
             <Zap size={16} color={C.cyan} />
             <span style={{ fontWeight: 700, fontSize: '15px', color: C.text, fontFamily: 'var(--font-display)' }}>Spending Trend</span>
-            <span style={{ fontSize: '12px', color: C.textMuted, marginLeft: '4px' }}>Last 7 days</span>
+            <span style={{ fontSize: '12px', color: C.textMuted, marginLeft: '4px' }}>Budget Timeline</span>
           </div>
           {activeBudget && <TrendChart budgetId={activeBudget.id} currency={activeBudget.currency} />}
         </motion.div>
