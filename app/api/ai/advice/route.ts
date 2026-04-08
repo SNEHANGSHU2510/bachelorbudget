@@ -1,4 +1,4 @@
-import { google } from '@ai-sdk/google';
+import { groq } from '@ai-sdk/groq';
 import { generateText } from 'ai';
 import { NextResponse } from 'next/server';
 
@@ -15,12 +15,13 @@ export async function POST(req: Request) {
     `;
 
     const { text } = await generateText({
-      model: google('gemini-2.0-flash'),
+      model: groq('llama-3.1-70b-versatile'),
       prompt,
     });
 
     return NextResponse.json({ advice: text });
   } catch (error: unknown) {
+    console.error("AI Error:", error);
     const message = error instanceof Error ? error.message : "An error occurred";
     return NextResponse.json({ error: message }, { status: 500 });
   }
