@@ -1,15 +1,32 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import { Download, FileText } from 'lucide-react';
+import { FileText } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 
+interface Expense {
+  id: string;
+  expense_date: string;
+  description: string;
+  category: string;
+  amount_in_budget_currency: number;
+}
+
+interface Budget {
+  name: string;
+  duration_days: number;
+  start_date: string;
+  end_date: string;
+  currency: string;
+  total_amount: number;
+}
+
 interface Props {
-  budget: any;
-  expenses: any[];
+  budget: Budget;
+  expenses: Expense[];
   totalSpent: number;
 }
 
@@ -129,7 +146,7 @@ export const ExportInvoiceButton: React.FC<Props> = ({ budget, expenses, totalSp
                 </tr>
               </thead>
               <tbody>
-                {expenses.slice(0, 15).map((exp, i) => (
+                {expenses.slice(0, 15).map((exp) => (
                   <tr key={exp.id} style={{ borderBottom: '1px solid #f8fafc' }}>
                     <td style={{ padding: '14px 16px', fontSize: '13px', color: '#1e293b' }}>{format(new Date(exp.expense_date), 'MMM dd')}</td>
                     <td style={{ padding: '14px 16px', fontSize: '13px', color: '#1e293b', maxWidth: '200px' }}>{exp.description}</td>
