@@ -93,6 +93,24 @@ export default function StatsPage() {
     finally { setAiLoading(false); }
   };
 
+  const recordTrainingData = async (rating: number) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || !activeBudget) return;
+
+      await supabase.from('ai_training_logs').insert({
+        user_id: user.id,
+        budget_context: { total: activeBudget.total_amount, spent: totalSpent, currency: activeBudget.currency, categories: catBreakdown },
+        user_query: aiMessage || 'Generic Advice Request',
+        ai_response: aiResponse,
+        rating
+      });
+      toast.success(rating > 0 ? 'Feedback saved! This will help train your model.' : 'Feedback recorded.');
+    } catch {
+      toast.error('Failed to log training data');
+    }
+  };
+
   if (!activeBudget) return (
     <div style={{ padding: '64px 32px', textAlign: 'center', color: C.textMuted, borderRadius: '24px', background: C.surface, border: `1px solid ${C.outline}` }}>
       Create a budget first to view statistics
