@@ -139,6 +139,16 @@ export default function DashboardPage() {
   const isAusterityMode = remaining < baseDailyBudget;
   const dailyBudget     = isAusterityMode ? dynamicDaily : baseDailyBudget;
 
+  const { data: allExpenses = [] } = useQuery({
+    queryKey: ['all-expenses', activeBudget?.id],
+    queryFn: async () => {
+      if (!activeBudget) return [];
+      const { data } = await supabase.from('expenses').select('*').eq('budget_id', activeBudget.id).order('expense_date', { ascending: false });
+      return data || [];
+    },
+    enabled: !!activeBudget && isBudgetLocked,
+  });
+
   const carryForward    = reserveData?.reserve ?? 0;
   // During strict austerity rationing, prior theoretical "reserves" are bypassed 
   // and the effective budget locks exactly to the mathematically reduced daily limit.
@@ -219,7 +229,11 @@ export default function DashboardPage() {
             <p style={{ margin: '6px 0 0', fontSize: '14px', color: C.textDim }}>This workspace is now locked in read-only mode to preserve its final evaluation. Download your official expense invoice report for record-keeping.</p>
           </div>
            {activeBudget && (
-            <ExportInvoiceButton />
+            <ExportInvoiceButton 
+              budget={activeBudget}
+              expenses={allExpenses}
+              totalSpent={totalSpent}
+            />
           )}
         </motion.div>
       )}
